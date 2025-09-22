@@ -108,10 +108,20 @@
                 </div>
                 <!-- Suggestions moved to the side of coping chart -->
                  <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-700">ข้อเสนอแนะเพิ่มเติม</h3>
-                    <ul id="suggestions-list" class="space-y-3 h-[350px] overflow-y-auto bg-gray-50 p-4 rounded-lg border">
-                        <!-- Suggestions will be populated here -->
-                    </ul>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700 text-center w-full">ข้อเสนอแนะเพิ่มเติม</h3>
+                    <div id="suggestions-lock-view" class="text-center py-16 flex flex-col justify-center items-center h-full">
+                        <button id="view-suggestions-btn" class="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            ดูข้อเสนอแนะ (ต้องใช้รหัสผ่าน)
+                        </button>
+                    </div>
+                    <div id="suggestions-content" class="hidden">
+                        <ul id="suggestions-list" class="space-y-3 h-[350px] overflow-y-auto bg-gray-50 p-4 rounded-lg border">
+                            <!-- Suggestions will be populated here -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -121,7 +131,20 @@
             <h2 class="text-2xl font-bold mb-2">เกิดข้อผิดพลาด!</h2>
             <p>ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้ กรุณาตรวจสอบการตั้งค่า Google Apps Script และรีเฟรชหน้าเว็บอีกครั้ง</p>
         </div>
+    </div>
 
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm transform transition-all" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">กรุณาใส่รหัสผ่าน</h3>
+            <p class="text-gray-600 mb-6">ส่วนนี้ถูกป้องกันด้วยรหัสผ่าน</p>
+            <input type="password" id="password-input" class="w-full p-3 border border-gray-300 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="รหัสผ่าน">
+            <p id="modal-password-error" class="text-red-500 mb-4 hidden">รหัสผ่านไม่ถูกต้อง!</p>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="modal-cancel-btn" class="px-6 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition">ยกเลิก</button>
+                <button id="modal-submit-btn" class="px-6 py-2 rounded-lg text-white bg-sky-600 hover:bg-sky-700 transition">ยืนยัน</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -177,13 +200,8 @@
 
             // Chart Colors
             const chartColors = [
-                '#7dd3fc', // sky-300
-                '#6ee7b7', // emerald-300
-                '#a78bfa', // violet-400
-                '#fde047', // yellow-300
-                '#fca5a5', // red-300
-                '#93c5fd', // blue-300
-                '#fdba74'  // orange-300
+                '#7dd3fc', '#6ee7b7', '#a78bfa', '#fde047',
+                '#fca5a5', '#93c5fd', '#fdba74'
             ];
             
             const doughnutOptions = {
@@ -195,134 +213,16 @@
                 cutout: '60%'
             };
 
-            // 1. Position Chart (Doughnut)
-            new Chart(document.getElementById('positionChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(positionData),
-                    datasets: [{
-                        label: 'ตำแหน่ง',
-                        data: Object.values(positionData),
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                    }]
-                },
-                options: doughnutOptions
-            });
-
-            // 2. Experience Chart (Doughnut)
-            new Chart(document.getElementById('experienceChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(experienceData),
-                    datasets: [{
-                        label: 'อายุงาน',
-                        data: Object.values(experienceData),
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                    }]
-                },
-                options: doughnutOptions
-            });
-
-            // 3. OT Amount Chart (Doughnut)
-            new Chart(document.getElementById('otAmountChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(otAmountData),
-                    datasets: [{
-                        label: 'จำนวนเงิน OT',
-                        data: Object.values(otAmountData),
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                    }]
-                },
-                options: doughnutOptions
-            });
+            // Charts Initialization...
+            new Chart(document.getElementById('positionChart'), { type: 'doughnut', data: { labels: Object.keys(positionData), datasets: [{ label: 'ตำแหน่ง', data: Object.values(positionData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
+            new Chart(document.getElementById('experienceChart'), { type: 'doughnut', data: { labels: Object.keys(experienceData), datasets: [{ label: 'อายุงาน', data: Object.values(experienceData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
+            new Chart(document.getElementById('otAmountChart'), { type: 'doughnut', data: { labels: Object.keys(otAmountData), datasets: [{ label: 'จำนวนเงิน OT', data: Object.values(otAmountData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
+            new Chart(document.getElementById('debtChart'), { type: 'doughnut', data: { labels: Object.keys(debtData), datasets: [{ label: 'ภาระหนี้สิน', data: Object.values(debtData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
             
-            // 4. Debt Chart (Doughnut)
-            new Chart(document.getElementById('debtChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(debtData),
-                    datasets: [{
-                        label: 'ภาระหนี้สิน',
-                        data: Object.values(debtData),
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                    }]
-                },
-                options: doughnutOptions
-            });
-
-            // 5. Impact Chart (Radar)
-            const impactLabels = {
-                impact_finance: 'การเงิน',
-                impact_mental: 'จิตใจ',
-                impact_trust: 'ความเชื่อมั่น',
-                impact_turnover: 'อยากย้ายงาน'
-            };
+            const impactLabels = { impact_finance: 'การเงิน', impact_mental: 'จิตใจ', impact_trust: 'ความเชื่อมั่น', impact_turnover: 'อยากย้ายงาน' };
             const impactAvgs = Object.keys(impactLabels).map(key => calculateAverage(key));
-            
-            new Chart(document.getElementById('impactChart'), {
-                type: 'radar',
-                data: {
-                    labels: Object.values(impactLabels),
-                    datasets: [{
-                        label: 'ค่าเฉลี่ยผลกระทบ (เต็ม 5)',
-                        data: impactAvgs,
-                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                        borderColor: 'rgba(56, 189, 248, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(56, 189, 248, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(56, 189, 248, 1)'
-                    }]
-                },
-                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 5,
-                            ticks: { stepSize: 1, backdropColor: 'transparent' },
-                            grid: { color: '#e5e7eb' },
-                            pointLabels: { font: { size: 14 } }
-                        }
-                    },
-                    plugins: { legend: { labels: { font: { size: 14 } } } }
-                }
-            });
-
-             // 6. Coping Chart (Bar)
-            new Chart(document.getElementById('copingChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(copingData),
-                    datasets: [{
-                        label: 'จำนวนผู้ตอบ',
-                        data: Object.values(copingData),
-                        backgroundColor: chartColors,
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Horizontal bar chart
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { grid: { display: false } }
-                    }
-                }
-            });
+            new Chart(document.getElementById('impactChart'), { type: 'radar', data: { labels: Object.values(impactLabels), datasets: [{ label: 'ค่าเฉลี่ยผลกระทบ (เต็ม 5)', data: impactAvgs, backgroundColor: 'rgba(56, 189, 248, 0.2)', borderColor: 'rgba(56, 189, 248, 1)', borderWidth: 2, pointBackgroundColor: 'rgba(56, 189, 248, 1)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(56, 189, 248, 1)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 5, ticks: { stepSize: 1, backdropColor: 'transparent' }, grid: { color: '#e5e7eb' }, pointLabels: { font: { size: 14 } } } }, plugins: { legend: { labels: { font: { size: 14 } } } } } });
+            new Chart(document.getElementById('copingChart'), { type: 'bar', data: { labels: Object.keys(copingData), datasets: [{ label: 'จำนวนผู้ตอบ', data: Object.values(copingData), backgroundColor: chartColors, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } } });
             
             // Populate Suggestions
             const suggestionsList = document.getElementById('suggestions-list');
@@ -337,6 +237,48 @@
             } else {
                 suggestionsList.innerHTML = '<li class="text-gray-500">ยังไม่มีข้อเสนอแนะ</li>';
             }
+
+            // --- NEW MODAL LOGIC ---
+            const viewSuggestionsBtn = document.getElementById('view-suggestions-btn');
+            const suggestionsLockView = document.getElementById('suggestions-lock-view');
+            const suggestionsContent = document.getElementById('suggestions-content');
+            
+            const passwordModal = document.getElementById('password-modal');
+            const passwordInput = document.getElementById('password-input');
+            const modalPasswordError = document.getElementById('modal-password-error');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            const modalSubmitBtn = document.getElementById('modal-submit-btn');
+
+            const openModal = () => {
+                passwordModal.classList.remove('hidden');
+                passwordInput.value = '';
+                passwordInput.focus();
+                modalPasswordError.classList.add('hidden');
+            };
+
+            const closeModal = () => {
+                passwordModal.classList.add('hidden');
+            };
+
+            const checkPassword = () => {
+                if (passwordInput.value === '003') {
+                    closeModal();
+                    suggestionsLockView.classList.add('hidden');
+                    suggestionsContent.classList.remove('hidden');
+                } else {
+                    modalPasswordError.classList.remove('hidden');
+                }
+            };
+            
+            viewSuggestionsBtn.addEventListener('click', openModal);
+            modalCancelBtn.addEventListener('click', closeModal);
+            passwordModal.addEventListener('click', closeModal); // Close if clicking on the background
+            modalSubmitBtn.addEventListener('click', checkPassword);
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
         }
     </script>
 </body>
