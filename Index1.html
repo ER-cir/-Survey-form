@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบสำรวจ: ผลกระทบจากการไม่ได้รับเงิน OT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #38bdf8, #2dd4bf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <div class="bg-white p-6 sm:p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-4xl mx-auto border border-gray-100">
+            
+            <!-- Survey Form Container -->
+            <div id="survey-form-container">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gradient">แบบสำรวจผลกระทบ</h1>
+                    <p class="text-gray-500 mt-3 text-lg">จากการไม่ได้รับเงิน OT</p>
+                    <p class="text-gray-600 mt-4 max-w-2xl mx-auto"><strong>คำชี้แจง:</strong> ข้อมูลของท่านจะถูกเก็บเป็นความลับ โปรดตอบตามความเป็นจริงเพื่อเป็นข้อมูลในการทำความเข้าใจและนำไปสู่การแก้ไขปัญหาต่อไป</p>
+                </div>
+                
+                <form id="surveyForm" name="submit-to-google-sheet" novalidate>
+                    <!-- Section 1: Basic Info -->
+                    <fieldset class="mb-8 p-6 border border-gray-200 rounded-xl">
+                        <legend class="text-xl font-semibold text-sky-800 px-2">ข้อมูลเบื้องต้น</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 mt-4">
+                            <div class="md:col-span-2">
+                                <label for="department" class="block text-gray-700 font-medium mb-2">1. ท่านสังกัดฝ่าย/แผนกใด?</label>
+                                <input type="text" id="department" name="department" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" required>
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 font-medium mb-2">2. ตำแหน่ง</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="position" value="ข้าราชการ" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> ข้าราชการ</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="position" value="พนักงานราชการ" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> พนักงานราชการ</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="position" value="พกส." class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> พกส.</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="position" value="ลูกจ้างเหมาบริการ" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> ลูกจ้างเหมาบริการ</label>
+                                </div>
+                                 <div class="mt-4">
+                                     <label class="flex items-start p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer">
+                                         <input type="radio" name="position" value="อื่น" class="mr-3 mt-1 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 
+                                         <div class="w-full">
+                                            <span>อื่น ๆ โปรดระบุ:</span>
+                                            <input type="text" name="position_other" class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="ระบุตำแหน่งของคุณ...">
+                                         </div>
+                                     </label>
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 font-medium mb-2">3. ท่านมีอายุงานกี่ปี?</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="experience" value="< 1 ปี" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> น้อยกว่า 1 ปี</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="experience" value="1 - 5 ปี" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 1 - 5 ปี</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="experience" value="> 5 ปี" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> มากกว่า 5 ปี</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section 2: OT Info -->
+                    <fieldset class="mb-8 p-6 border border-gray-200 rounded-xl">
+                        <legend class="text-xl font-semibold text-sky-800 px-2">ข้อมูลการทำงานล่วงเวลา (OT)</legend>
+                        <div class="mt-4">
+                            <label class="block text-gray-700 font-medium mb-2">4. โดยปกติแล้ว ท่านเคยได้รับเงิน OT เฉลี่ยเดือนละเท่าไร?</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="ot_amount" value="น้อยกว่า 3,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> น้อยกว่า 3,000 บาท</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="ot_amount" value="3,001 - 5,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 3,001 - 5,000 บาท</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="ot_amount" value="5,001 - 10,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 5,001 - 10,000 บาท</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="ot_amount" value="มากกว่า 10,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> มากกว่า 10,000 บาท</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section 3: Impact -->
+                    <fieldset class="mb-8 p-6 border border-gray-200 rounded-xl">
+                        <legend class="text-xl font-semibold text-sky-800 px-2">ผลกระทบจากการไม่ได้รับเงิน OT</legend>
+                        <div class="mb-8 mt-4">
+                            <label class="block text-gray-700 font-medium mb-2">5. โปรดให้คะแนนผลกระทบในด้านต่างๆ (1 = น้อยสุด, 5 = มากสุด)</label>
+                            <div class="overflow-x-auto mt-3">
+                                <table class="w-full min-w-[600px] text-center border-collapse">
+                                    <thead>
+                                        <tr class="bg-sky-50">
+                                            <th class="p-3 border text-left font-semibold">ด้านที่ได้รับผลกระทบ</th>
+                                            <th class="p-3 border w-20 font-semibold">1<br><span class="font-normal">(น้อยสุด)</span></th>
+                                            <th class="p-3 border w-20 font-semibold">2</th>
+                                            <th class="p-3 border w-20 font-semibold">3</th>
+                                            <th class="p-3 border w-20 font-semibold">4</th>
+                                            <th class="p-3 border w-20 font-semibold">5<br><span class="font-normal">(มากสุด)</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="hover:bg-sky-50/50">
+                                            <td class="p-3 border text-left"><strong>การเงิน</strong> (ค่าใช้จ่าย, สภาพคล่อง)</td>
+                                            <td class="p-3 border"><input type="radio" name="impact_finance" value="1" class="h-4 w-4 text-sky-600" required></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_finance" value="2" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_finance" value="3" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_finance" value="4" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_finance" value="5" class="h-4 w-4 text-sky-600"></td>
+                                        </tr>
+                                        <tr class="hover:bg-sky-50/50">
+                                            <td class="p-3 border text-left"><strong>จิตใจ</strong> (ความเครียด, หมดไฟ)</td>
+                                            <td class="p-3 border"><input type="radio" name="impact_mental" value="1" class="h-4 w-4 text-sky-600" required></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_mental" value="2" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_mental" value="3" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_mental" value="4" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_mental" value="5" class="h-4 w-4 text-sky-600"></td>
+                                        </tr>
+                                        <tr class="hover:bg-sky-50/50">
+                                            <td class="p-3 border text-left"><strong>ความเชื่อมั่น</strong> (ต่อองค์กร)</td>
+                                            <td class="p-3 border"><input type="radio" name="impact_trust" value="1" class="h-4 w-4 text-sky-600" required></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_trust" value="2" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_trust" value="3" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_trust" value="4" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_trust" value="5" class="h-4 w-4 text-sky-600"></td>
+                                        </tr>
+                                        <tr class="hover:bg-sky-50/50">
+                                            <td class="p-3 border text-left"><strong>ความคิดอยากย้ายงาน</strong></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_turnover" value="1" class="h-4 w-4 text-sky-600" required></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_turnover" value="2" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_turnover" value="3" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_turnover" value="4" class="h-4 w-4 text-sky-600"></td>
+                                            <td class="p-3 border"><input type="radio" name="impact_turnover" value="5" class="h-4 w-4 text-sky-600"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                         <div>
+                            <label class="block text-gray-700 font-medium mb-2">6. การไม่ได้รับเงิน OT ทำให้ท่านมีภาระหนี้สินที่ต้องจ่ายเพิ่มขึ้นต่อเดือนเป็นจำนวนเท่าไร?</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="debt_increase" value="ไม่มีภาระเพิ่มขึ้น" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> ไม่มีภาระเพิ่มขึ้น</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="debt_increase" value="น้อยกว่า 1,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> น้อยกว่า 1,000 บาท</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="debt_increase" value="1,001 - 3,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 1,001 - 3,000 บาท</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="debt_increase" value="มากกว่า 3,000 บาท" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> มากกว่า 3,000 บาท</label>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <label class="block text-gray-700 font-medium mb-2">7. การแก้ปัญหาเฉพาะหน้าของท่าน เมื่อไม่ได้รับเงิน OT คืออะไร?</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="ขายทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> ขายทรัพย์สิน</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="กู้เงิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> กู้เงิน</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="ยืม (ญาติ, เพื่อน)" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> ยืม (ญาติ, เพื่อน)</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="จำนำทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> จำนำทรัพย์สิน</label>
+                            </div>
+                            <div class="mt-4">
+                                 <label class="flex items-start p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer">
+                                     <input type="radio" name="coping_mechanism" value="อื่น" class="mr-3 mt-1 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 
+                                     <div class="w-full">
+                                        <span>อื่น ๆ โปรดระบุ:</span>
+                                        <input type="text" name="coping_mechanism_other" class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="ระบุวิธีแก้ปัญหาของคุณ...">
+                                     </div>
+                                 </label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section 4: Suggestions -->
+                    <fieldset class="mb-8 p-6 border border-gray-200 rounded-xl">
+                        <legend class="text-xl font-semibold text-sky-800 px-2">ข้อเสนอแนะ</legend>
+                        <div class="mt-4">
+                            <label for="suggestion" class="block text-gray-700 font-medium mb-2">8. ท่านมีข้อเสนอแนะเพื่อแก้ไขปัญหานี้อย่างไร?</label>
+                            <textarea id="suggestion" name="suggestion" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="แสดงความคิดเห็นของคุณที่นี่..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <div class="text-center mt-6">
+                        <button type="submit" id="submit-button" class="bg-sky-600 text-white font-bold text-lg py-3 px-10 rounded-xl hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500 focus:ring-opacity-50 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            ส่งแบบสำรวจ
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Messages Container -->
+            <div id="message-container" class="text-center hidden p-8 fade-in">
+                 <!-- Success/Error content will be injected here by JS -->
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const form = document.getElementById('surveyForm');
+        const submitButton = document.getElementById('submit-button');
+        const formContainer = document.getElementById('survey-form-container');
+        const messageContainer = document.getElementById('message-container');
+
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwQtp_7poavBljxEvh9mkTxqcQgiYpyT1rFaqk6RE9kbMJNazamPh2iNCYY3CaV1esrtQ/exec';
+
+        const showMessage = (type, title, text) => {
+            const iconColor = type === 'success' ? 'text-teal-500' : 'text-red-500';
+            const iconSvg = type === 'success' 
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+
+            messageContainer.innerHTML = `
+                <svg class="mx-auto mb-4 w-16 h-16 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${iconSvg}</svg>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">${title}</h2>
+                <p class="text-gray-600">${text}</p>
+            `;
+            formContainer.classList.add('hidden');
+            messageContainer.classList.remove('hidden');
+        };
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            if (scriptURL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                showMessage('error', 'การตั้งค่าไม่สมบูรณ์!', 'กรุณาตั้งค่า Google Apps Script และใส่ Web App URL ในไฟล์นี้ก่อน');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'กำลังส่งข้อมูล...';
+
+            const formData = new FormData(form);
+            
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result === 'success') {
+                        showMessage('success', 'ส่งข้อมูลสำเร็จ!', 'ขอขอบคุณสำหรับความร่วมมือในการตอบแบบสำรวจ');
+                        form.reset();
+                    } else {
+                        throw new Error(data.error || 'Submission failed on server');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    showMessage('error', 'เกิดข้อผิดพลาด!', 'ไม่สามารถส่งข้อมูลได้ กรุณาตรวจสอบการตั้งค่าและลองใหม่อีกครั้ง');
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'ส่งแบบสำรวจ';
+                });
+        });
+    </script>
+</body>
+</html>
+

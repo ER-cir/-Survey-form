@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แดชบอร์ดสรุปผล: ผลกระทบจากการไม่ได้รับเงิน OT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f9ff; /* Pastel blue background */
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .doughnut-chart-container {
+             position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .kpi-card {
+            border-left: 4px solid #38bdf8; /* Sky blue accent */
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #2563eb, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid rgba(0, 0, 0, .1);
+            border-left-color: #38bdf8; /* Sky blue loader */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gradient">แดชบอร์ดสรุปผลแบบสำรวจ</h1>
+            <p class="text-gray-600 mt-3 text-lg">ผลกระทบจากการไม่ได้รับเงิน OT</p>
+        </header>
+
+        <!-- Loading Indicator -->
+        <div id="loader" class="flex justify-center items-center h-64">
+            <div class="loader"></div>
+        </div>
+        
+        <!-- Main Dashboard Content -->
+        <div id="dashboard-content" class="hidden">
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-xl shadow-lg kpi-card transition-transform transform hover:scale-105">
+                    <h3 class="text-gray-500 text-lg">ผู้ตอบแบบสำรวจทั้งหมด</h3>
+                    <p id="total-responses" class="text-5xl font-bold text-gray-900 mt-2">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg kpi-card transition-transform transform hover:scale-105">
+                    <h3 class="text-gray-500 text-lg">ค่าเฉลี่ยผลกระทบด้านการเงิน</h3>
+                    <p id="avg-finance" class="text-5xl font-bold text-gray-900 mt-2">0.0</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg kpi-card transition-transform transform hover:scale-105">
+                    <h3 class="text-gray-500 text-lg">ค่าเฉลี่ยความต้องการย้ายงาน</h3>
+                    <p id="avg-turnover" class="text-5xl font-bold text-gray-900 mt-2">0.0</p>
+                </div>
+            </div>
+
+            <!-- Doughnut Charts Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">สัดส่วนตามตำแหน่ง</h3>
+                    <div class="doughnut-chart-container"><canvas id="positionChart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">สัดส่วนตามอายุงาน</h3>
+                    <div class="doughnut-chart-container"><canvas id="experienceChart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">ระดับเงิน OT ที่เคยได้รับ</h3>
+                    <div class="doughnut-chart-container"><canvas id="otAmountChart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">ภาระหนี้สินที่เพิ่มขึ้น</h3>
+                    <div class="doughnut-chart-container"><canvas id="debtChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Other Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">ค่าเฉลี่ยผลกระทบในด้านต่างๆ</h3>
+                    <div class="chart-container"><canvas id="impactChart"></canvas></div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">วิธีการแก้ปัญหาเฉพาะหน้า</h3>
+                    <div class="chart-container"><canvas id="copingChart"></canvas></div>
+                </div>
+                <!-- Suggestions moved to the side of coping chart -->
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">ข้อเสนอแนะเพิ่มเติม</h3>
+                    <ul id="suggestions-list" class="space-y-3 h-[350px] overflow-y-auto bg-gray-50 p-4 rounded-lg border">
+                        <!-- Suggestions will be populated here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+         <div id="error-message" class="hidden text-center bg-red-100 text-red-700 p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold mb-2">เกิดข้อผิดพลาด!</h2>
+            <p>ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้ กรุณาตรวจสอบการตั้งค่า Google Apps Script และรีเฟรชหน้าเว็บอีกครั้ง</p>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwQtp_7poavBljxEvh9mkTxqcQgiYpyT1rFaqk6RE9kbMJNazamPh2iNCYY3CaV1esrtQ/exec';
+            const loader = document.getElementById('loader');
+            const dashboardContent = document.getElementById('dashboard-content');
+            const errorMessage = document.getElementById('error-message');
+
+            fetch(scriptURL)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.result === 'success' && result.data) {
+                        loader.style.display = 'none';
+                        dashboardContent.classList.remove('hidden');
+                        processData(result.data);
+                    } else {
+                        throw new Error(result.error || 'Failed to fetch data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    loader.style.display = 'none';
+                    errorMessage.classList.remove('hidden');
+                });
+        });
+
+        function processData(data) {
+            // KPIs
+            document.getElementById('total-responses').textContent = data.length;
+            
+            const calculateAverage = (key) => {
+                if (data.length === 0) return '0.0';
+                const total = data.reduce((sum, row) => sum + Number(row[key] || 0), 0);
+                return (total / data.length).toFixed(1);
+            };
+            
+            document.getElementById('avg-finance').textContent = calculateAverage('impact_finance');
+            document.getElementById('avg-turnover').textContent = calculateAverage('impact_turnover');
+
+            // Data processing for charts
+            const countBy = (key) => data.reduce((acc, row) => {
+                const value = row[key] || 'ไม่ระบุ';
+                acc[value] = (acc[value] || 0) + 1;
+                return acc;
+            }, {});
+
+            const positionData = countBy('position');
+            const experienceData = countBy('experience');
+            const otAmountData = countBy('ot_amount');
+            const debtData = countBy('debt_increase');
+            const copingData = countBy('coping_mechanism');
+
+            // Chart Colors
+            const chartColors = [
+                '#7dd3fc', // sky-300
+                '#6ee7b7', // emerald-300
+                '#a78bfa', // violet-400
+                '#fde047', // yellow-300
+                '#fca5a5', // red-300
+                '#93c5fd', // blue-300
+                '#fdba74'  // orange-300
+            ];
+            
+            const doughnutOptions = {
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'top' } 
+                },
+                cutout: '60%'
+            };
+
+            // 1. Position Chart (Doughnut)
+            new Chart(document.getElementById('positionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(positionData),
+                    datasets: [{
+                        label: 'ตำแหน่ง',
+                        data: Object.values(positionData),
+                        backgroundColor: chartColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: doughnutOptions
+            });
+
+            // 2. Experience Chart (Doughnut)
+            new Chart(document.getElementById('experienceChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(experienceData),
+                    datasets: [{
+                        label: 'อายุงาน',
+                        data: Object.values(experienceData),
+                        backgroundColor: chartColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: doughnutOptions
+            });
+
+            // 3. OT Amount Chart (Doughnut)
+            new Chart(document.getElementById('otAmountChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(otAmountData),
+                    datasets: [{
+                        label: 'จำนวนเงิน OT',
+                        data: Object.values(otAmountData),
+                        backgroundColor: chartColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: doughnutOptions
+            });
+            
+            // 4. Debt Chart (Doughnut)
+            new Chart(document.getElementById('debtChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(debtData),
+                    datasets: [{
+                        label: 'ภาระหนี้สิน',
+                        data: Object.values(debtData),
+                        backgroundColor: chartColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: doughnutOptions
+            });
+
+            // 5. Impact Chart (Radar)
+            const impactLabels = {
+                impact_finance: 'การเงิน',
+                impact_mental: 'จิตใจ',
+                impact_trust: 'ความเชื่อมั่น',
+                impact_turnover: 'อยากย้ายงาน'
+            };
+            const impactAvgs = Object.keys(impactLabels).map(key => calculateAverage(key));
+            
+            new Chart(document.getElementById('impactChart'), {
+                type: 'radar',
+                data: {
+                    labels: Object.values(impactLabels),
+                    datasets: [{
+                        label: 'ค่าเฉลี่ยผลกระทบ (เต็ม 5)',
+                        data: impactAvgs,
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        borderColor: 'rgba(56, 189, 248, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(56, 189, 248, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(56, 189, 248, 1)'
+                    }]
+                },
+                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { stepSize: 1, backdropColor: 'transparent' },
+                            grid: { color: '#e5e7eb' },
+                            pointLabels: { font: { size: 14 } }
+                        }
+                    },
+                    plugins: { legend: { labels: { font: { size: 14 } } } }
+                }
+            });
+
+             // 6. Coping Chart (Bar)
+            new Chart(document.getElementById('copingChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(copingData),
+                    datasets: [{
+                        label: 'จำนวนผู้ตอบ',
+                        data: Object.values(copingData),
+                        backgroundColor: chartColors,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bar chart
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+            
+            // Populate Suggestions
+            const suggestionsList = document.getElementById('suggestions-list');
+            const suggestions = data.map(row => row.suggestion).filter(s => s && s.trim() !== '');
+            if (suggestions.length > 0) {
+                 suggestions.forEach(suggestion => {
+                    const li = document.createElement('li');
+                    li.textContent = suggestion;
+                    li.className = "pb-2 border-b border-gray-200 last:border-b-0";
+                    suggestionsList.appendChild(li);
+                });
+            } else {
+                suggestionsList.innerHTML = '<li class="text-gray-500">ยังไม่มีข้อเสนอแนะ</li>';
+            }
+        }
+    </script>
+</body>
+</html>
+
