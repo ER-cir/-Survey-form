@@ -165,16 +165,16 @@
                             </div>
                         </div>
                         <div class="mt-8">
-                            <label class="block text-gray-700 font-medium mb-2">7. การแก้ปัญหาเฉพาะหน้าของท่าน เมื่อไม่ได้รับเงิน OT คืออะไร?</label>
+                            <label class="block text-gray-700 font-medium mb-2">7. การแก้ปัญหาเฉพาะหน้าของท่าน เมื่อไม่ได้รับเงิน OT คืออะไร? (เลือกได้หลายข้อ)</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="ขายทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500" required> ขายทรัพย์สิน</label>
-                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="กู้เงิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> กู้เงิน</label>
-                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="ยืม (ญาติ, เพื่อน)" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> ยืม (ญาติ, เพื่อน)</label>
-                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="coping_mechanism" value="จำนำทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> จำนำทรัพย์สิน</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="checkbox" name="coping_mechanism" value="ขายทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"> ขายทรัพย์สิน</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="checkbox" name="coping_mechanism" value="กู้เงิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"> กู้เงิน</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="checkbox" name="coping_mechanism" value="ยืม (ญาติ, เพื่อน)" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"> ยืม (ญาติ, เพื่อน)</label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="checkbox" name="coping_mechanism" value="จำนำทรัพย์สิน" class="mr-3 h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"> จำนำทรัพย์สิน</label>
                             </div>
                             <div class="mt-4">
                                  <label class="flex items-start p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer">
-                                     <input type="radio" name="coping_mechanism" value="อื่น" class="mr-3 mt-1 h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500"> 
+                                     <input type="checkbox" name="coping_mechanism" value="อื่น" class="mr-3 mt-1 h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"> 
                                      <div class="w-full">
                                         <span>อื่น ๆ โปรดระบุ:</span>
                                         <input type="text" name="coping_mechanism_other" class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="ระบุวิธีแก้ปัญหาของคุณ...">
@@ -251,7 +251,26 @@
 
             const formData = new FormData(form);
             
-            fetch(scriptURL, { method: 'POST', body: formData })
+            // Handle multiple checkboxes for 'coping_mechanism'
+            const copingMechanisms = Array.from(form.querySelectorAll('input[name="coping_mechanism"]:checked')).map(cb => cb.value);
+            
+            let finalCopingMechanisms = copingMechanisms.filter(val => val !== 'อื่น');
+            const otherText = form.querySelector('input[name="coping_mechanism_other"]').value.trim();
+
+            if (copingMechanisms.includes('อื่น') && otherText) {
+                finalCopingMechanisms.push(otherText);
+            }
+
+            // Create a new FormData object to send
+            const finalFormData = new FormData();
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'coping_mechanism' && key !== 'coping_mechanism_other') {
+                    finalFormData.append(key, value);
+                }
+            }
+            finalFormData.append('coping_mechanism', finalCopingMechanisms.join(', '));
+            
+            fetch(scriptURL, { method: 'POST', body: finalFormData })
                 .then(response => response.json())
                 .then(data => {
                     if (data.result === 'success') {
