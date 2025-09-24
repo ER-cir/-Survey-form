@@ -17,7 +17,7 @@
         .chart-container {
             position: relative;
             height: 400px;
-            width: 100%;
+            width: 100%; 
         }
         .doughnut-chart-container {
              position: relative;
@@ -43,13 +43,21 @@
             height: 50px;
             animation: spin 1s linear infinite;
         }
+        .comment-box {
+            height: 350px;
+            overflow-y: auto;
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
     </style>
 </head>
 <body class="text-gray-800">
 
     <div class="container mx-auto px-4 py-8 md:py-12">
         <header class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-gradient">แดชบอร์ดสรุปผลแบบสำรวจ</h1>
+            <h1 class="text-4xl md:text-5xl font-bold text-gradient">แดชบอร์ดสรุปผลแบบสำรวจ</h1>
             <p class="text-gray-600 mt-3 text-lg">ผลกระทบจากการไม่ได้รับเงิน OT</p>
         </header>
 
@@ -106,24 +114,47 @@
                     <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">วิธีการแก้ปัญหาเฉพาะหน้า</h3>
                     <div class="chart-container"><canvas id="copingChart"></canvas></div>
                 </div>
-                <!-- Suggestions moved to the side of coping chart -->
-                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-700 text-center w-full">ข้อเสนอแนะเพิ่มเติม</h3>
-                    <div id="suggestions-lock-view" class="text-center py-16 flex flex-col justify-center items-center h-full">
-                        <button id="view-suggestions-btn" class="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            ดูข้อเสนอแนะ (ต้องใช้รหัสผ่าน)
-                        </button>
-                    </div>
-                    <div id="suggestions-content" class="hidden">
-                        <ul id="suggestions-list" class="space-y-3 h-[350px] overflow-y-auto bg-gray-50 p-4 rounded-lg border">
-                            <!-- Suggestions will be populated here -->
-                        </ul>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                     <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">เห็นด้วยหรือไม่กับการปิดบริการนอกเวลา</h3>
+                     <div class="chart-container"><canvas id="closeAfterHoursChart"></canvas></div>
+                </div>
+            </div>
+            
+            <!-- NEW COMBINED SECTION: Additional Opinions & Suggestions -->
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg mb-8">
+                <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">ข้อเสนอแนะและความคิดเห็นเพิ่มเติม</h2>
+                
+                <div id="comments-lock-view" class="text-center py-16 flex flex-col justify-center items-center">
+                    <button id="view-comments-btn" class="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        ดูข้อเสนอแนะและความคิดเห็น (ต้องใช้รหัสผ่าน)
+                    </button>
+                </div>
+
+                <div id="all-comments-content" class="hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="p-4 border rounded-lg">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">ข้อเสนอแนะ</h3>
+                            <ul id="suggestions-list" class="comment-box space-y-3"></ul>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">สิ่งที่อยากฝากถึงผู้บริหาร</h3>
+                            <ul id="management-message-list" class="comment-box space-y-3"></ul>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">ความเห็นต่อการลดเงิน OT 10%</h3>
+                            <ul id="ot-reduction-list" class="comment-box space-y-3"></ul>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">ความเห็นต่อการลดจำนวนเวร</h3>
+                            <ul id="shift-reduction-list" class="comment-box space-y-3"></ul>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
         
         <!-- Error Message -->
@@ -196,13 +227,24 @@
             const experienceData = countBy('experience');
             const otAmountData = countBy('ot_amount');
             const debtData = countBy('debt_increase');
-            const copingData = countBy('coping_mechanism');
+            
+            // Correctly process multi-select coping mechanism
+            const copingData = data.reduce((acc, row) => {
+                const mechanisms = (row['coping_mechanism'] || '').split(', ');
+                mechanisms.forEach(mechanism => {
+                    if (mechanism) { // Ensure not an empty string
+                        acc[mechanism] = (acc[mechanism] || 0) + 1;
+                    }
+                });
+                return acc;
+            }, {});
+
+            // New data processing
+            const closeAfterHoursData = countBy('opinion_close_after_hours');
 
             // Chart Colors
-            const chartColors = [
-                '#7dd3fc', '#6ee7b7', '#a78bfa', '#fde047',
-                '#fca5a5', '#93c5fd', '#fdba74'
-            ];
+            const chartColors = [ '#7dd3fc', '#6ee7b7', '#a78bfa', '#fde047', '#fca5a5', '#93c5fd', '#fdba74' ];
+            const agreeDisagreeColors = ['#6ee7b7', '#fca5a5']; // Green for agree, Red for disagree
             
             const doughnutOptions = {
                 responsive: true, 
@@ -214,34 +256,46 @@
             };
 
             // Charts Initialization...
-            new Chart(document.getElementById('positionChart'), { type: 'doughnut', data: { labels: Object.keys(positionData), datasets: [{ label: 'ตำแหน่ง', data: Object.values(positionData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
-            new Chart(document.getElementById('experienceChart'), { type: 'doughnut', data: { labels: Object.keys(experienceData), datasets: [{ label: 'อายุงาน', data: Object.values(experienceData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
-            new Chart(document.getElementById('otAmountChart'), { type: 'doughnut', data: { labels: Object.keys(otAmountData), datasets: [{ label: 'จำนวนเงิน OT', data: Object.values(otAmountData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
-            new Chart(document.getElementById('debtChart'), { type: 'doughnut', data: { labels: Object.keys(debtData), datasets: [{ label: 'ภาระหนี้สิน', data: Object.values(debtData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3, }] }, options: doughnutOptions });
+            new Chart(document.getElementById('positionChart'), { type: 'doughnut', data: { labels: Object.keys(positionData), datasets: [{ data: Object.values(positionData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3 }] }, options: doughnutOptions });
+            new Chart(document.getElementById('experienceChart'), { type: 'doughnut', data: { labels: Object.keys(experienceData), datasets: [{ data: Object.values(experienceData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3 }] }, options: doughnutOptions });
+            new Chart(document.getElementById('otAmountChart'), { type: 'doughnut', data: { labels: Object.keys(otAmountData), datasets: [{ data: Object.values(otAmountData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3 }] }, options: doughnutOptions });
+            new Chart(document.getElementById('debtChart'), { type: 'doughnut', data: { labels: Object.keys(debtData), datasets: [{ data: Object.values(debtData), backgroundColor: chartColors, borderColor: '#ffffff', borderWidth: 3 }] }, options: doughnutOptions });
             
             const impactLabels = { impact_finance: 'การเงิน', impact_mental: 'จิตใจ', impact_trust: 'ความเชื่อมั่น', impact_turnover: 'อยากย้ายงาน' };
             const impactAvgs = Object.keys(impactLabels).map(key => calculateAverage(key));
             new Chart(document.getElementById('impactChart'), { type: 'radar', data: { labels: Object.values(impactLabels), datasets: [{ label: 'ค่าเฉลี่ยผลกระทบ (เต็ม 5)', data: impactAvgs, backgroundColor: 'rgba(56, 189, 248, 0.2)', borderColor: 'rgba(56, 189, 248, 1)', borderWidth: 2, pointBackgroundColor: 'rgba(56, 189, 248, 1)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(56, 189, 248, 1)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 5, ticks: { stepSize: 1, backdropColor: 'transparent' }, grid: { color: '#e5e7eb' }, pointLabels: { font: { size: 14 } } } }, plugins: { legend: { labels: { font: { size: 14 } } } } } });
             new Chart(document.getElementById('copingChart'), { type: 'bar', data: { labels: Object.keys(copingData), datasets: [{ label: 'จำนวนผู้ตอบ', data: Object.values(copingData), backgroundColor: chartColors, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } } });
             
-            // Populate Suggestions
-            const suggestionsList = document.getElementById('suggestions-list');
-            const suggestions = data.map(row => row.suggestion).filter(s => s && s.trim() !== '');
-            if (suggestions.length > 0) {
-                 suggestions.forEach(suggestion => {
-                    const li = document.createElement('li');
-                    li.textContent = suggestion;
-                    li.className = "pb-2 border-b border-gray-200 last:border-b-0";
-                    suggestionsList.appendChild(li);
-                });
-            } else {
-                suggestionsList.innerHTML = '<li class="text-gray-500">ยังไม่มีข้อเสนอแนะ</li>';
-            }
+            // New Chart: Close After Hours
+            new Chart(document.getElementById('closeAfterHoursChart'), { type: 'pie', data: { labels: Object.keys(closeAfterHoursData), datasets: [{ data: Object.values(closeAfterHoursData), backgroundColor: agreeDisagreeColors, borderColor: '#ffffff', borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } });
+            
+            // Populate Comment Lists
+            const populateList = (elementId, dataKey) => {
+                const listElement = document.getElementById(elementId);
+                const comments = data.map(row => row[dataKey]).filter(c => c && c.trim() !== '');
+                if (comments.length > 0) {
+                     listElement.innerHTML = ''; // Clear existing content
+                    comments.forEach(comment => {
+                        const li = document.createElement('li');
+                        li.textContent = comment;
+                        li.className = "pb-2 border-b border-gray-200 last:border-b-0";
+                        listElement.appendChild(li);
+                    });
+                } else {
+                    listElement.innerHTML = `<li class="text-gray-500">ยังไม่มีความคิดเห็นในหัวข้อนี้</li>`;
+                }
+            };
 
-            // --- NEW MODAL LOGIC ---
-            const viewSuggestionsBtn = document.getElementById('view-suggestions-btn');
-            const suggestionsLockView = document.getElementById('suggestions-lock-view');
-            const suggestionsContent = document.getElementById('suggestions-content');
+            populateList('suggestions-list', 'suggestion');
+            populateList('management-message-list', 'message_to_management');
+            populateList('ot-reduction-list', 'opinion_ot_reduction');
+            populateList('shift-reduction-list', 'opinion_shift_reduction');
+
+
+            // --- MODAL LOGIC ---
+            const viewCommentsBtn = document.getElementById('view-comments-btn');
+            const commentsLockView = document.getElementById('comments-lock-view');
+            const allCommentsContent = document.getElementById('all-comments-content');
             
             const passwordModal = document.getElementById('password-modal');
             const passwordInput = document.getElementById('password-input');
@@ -255,29 +309,24 @@
                 passwordInput.focus();
                 modalPasswordError.classList.add('hidden');
             };
-
-            const closeModal = () => {
-                passwordModal.classList.add('hidden');
-            };
-
+            const closeModal = () => passwordModal.classList.add('hidden');
+            
             const checkPassword = () => {
                 if (passwordInput.value === '003') {
                     closeModal();
-                    suggestionsLockView.classList.add('hidden');
-                    suggestionsContent.classList.remove('hidden');
+                    commentsLockView.classList.add('hidden');
+                    allCommentsContent.classList.remove('hidden');
                 } else {
                     modalPasswordError.classList.remove('hidden');
                 }
             };
             
-            viewSuggestionsBtn.addEventListener('click', openModal);
+            viewCommentsBtn.addEventListener('click', openModal);
             modalCancelBtn.addEventListener('click', closeModal);
-            passwordModal.addEventListener('click', closeModal); // Close if clicking on the background
+            passwordModal.addEventListener('click', closeModal);
             modalSubmitBtn.addEventListener('click', checkPassword);
             passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    checkPassword();
-                }
+                if (e.key === 'Enter') checkPassword();
             });
         }
     </script>
