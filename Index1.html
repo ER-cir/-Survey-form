@@ -184,11 +184,37 @@
                         </div>
                     </fieldset>
 
-                    <!-- Section 4: Suggestions -->
+                    <!-- Section 4: Additional Opinions -->
+                    <fieldset class="mb-6 p-4 sm:p-6 border border-gray-200 rounded-xl">
+                        <legend class="text-lg sm:text-xl font-semibold text-sky-800 px-2">ความคิดเห็นเพิ่มเติม</legend>
+                        <div class="space-y-8 mt-4">
+                            <div>
+                                <label for="opinion_ot_reduction" class="block text-gray-700 font-medium mb-2">8. ท่านมีความเห็นอย่างไรเกี่ยวกับ การลดเงิน OT 10% จากยอดปกติ?</label>
+                                <textarea id="opinion_ot_reduction" name="opinion_ot_reduction" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="แสดงความคิดเห็นของคุณ..."></textarea>
+                            </div>
+                            <div>
+                                <label for="opinion_shift_reduction" class="block text-gray-700 font-medium mb-2">9. ท่านมีความเห็นอย่างไรเกี่ยวกับ การลดจำนวนเวร?</label>
+                                <textarea id="opinion_shift_reduction" name="opinion_shift_reduction" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="แสดงความคิดเห็นของคุณ..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">10. ท่านเห็นด้วยหรือไม่ หากต้องปิดให้บริการนอกเวลาทั้งหมด เพื่อลดค่าใช้จ่ายของโรงพยาบาล?</label>
+                                <div class="flex items-center space-x-6 mt-3">
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="opinion_close_after_hours" value="เห็นด้วย" class="mr-3 h-4 w-4 text-sky-600" required> เห็นด้วย</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-sky-50 hover:border-sky-400 transition cursor-pointer"><input type="radio" name="opinion_close_after_hours" value="ไม่เห็นด้วย" class="mr-3 h-4 w-4 text-sky-600"> ไม่เห็นด้วย</label>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="message_to_management" class="block text-gray-700 font-medium mb-2">11. ท่านอยากฝากอะไรถึงผู้บริหาร?</label>
+                                <textarea id="message_to_management" name="message_to_management" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="ฝากข้อความของคุณ..."></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section 5: Suggestions -->
                     <fieldset class="mb-6 p-4 sm:p-6 border border-gray-200 rounded-xl">
                         <legend class="text-lg sm:text-xl font-semibold text-sky-800 px-2">ข้อเสนอแนะ</legend>
                         <div class="mt-4">
-                            <label for="suggestion" class="block text-gray-700 font-medium mb-2">8. ท่านมีข้อเสนอแนะเพื่อแก้ไขปัญหานี้อย่างไร?</label>
+                            <label for="suggestion" class="block text-gray-700 font-medium mb-2">12. ท่านมีข้อเสนอแนะเพื่อแก้ไขปัญหานี้อย่างไร?</label>
                             <textarea id="suggestion" name="suggestion" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition" placeholder="แสดงความคิดเห็นของคุณที่นี่..."></textarea>
                         </div>
                     </fieldset>
