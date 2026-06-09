@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแดชบอร์ดสรุปผลความพึงพอใจ (Service Satisfaction Dashboard)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Sarabun & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Sarabun', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden text-slate-800 transition-colors duration-200">
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full"></div>
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="hidden md:flex md:flex-shrink-0 flex-col w-64 bg-brand-900 text-white">
+            <div class="flex items-center justify-center h-16 px-4 bg-brand-950 border-b border-brand-800">
+                <i class="fa-solid fa-square-poll-vertical text-teal-400 text-2xl mr-3"></i>
+                <span class="text-lg font-bold tracking-wider">Hosp-Satisfaction</span>
+            </div>
+            <div class="flex-1 flex flex-col overflow-y-auto p-4 space-y-1">
+                <p class="text-xs font-semibold text-teal-300 uppercase tracking-wider px-3 mb-2">เมนูหลัก</p>
+                <button onclick="switchTab('overview')" id="nav-overview" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl bg-teal-800 text-white transition-all duration-150">
+                    <i class="fa-solid fa-chart-pie w-5 text-teal-300 mr-3"></i>
+                    ภาพรวมผลประเมิน
+                </button>
+                <button onclick="switchTab('analysis')" id="nav-analysis" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all duration-150">
+                    <i class="fa-solid fa-magnifying-glass-chart w-5 text-teal-400 mr-3"></i>
+                    วิเคราะห์เจาะลึกบริการ
+                </button>
+                <button onclick="switchTab('feedback')" id="nav-feedback" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all duration-150">
+                    <i class="fa-solid fa-comments w-5 text-teal-400 mr-3"></i>
+                    ความคิดเห็นผู้รับบริการ
+                </button>
+                <button onclick="switchTab('insights')" id="nav-insights" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all duration-150">
+                    <i class="fa-solid fa-lightbulb w-5 text-teal-400 mr-3"></i>
+                    ข้อแนะนำเชิงกลยุทธ์
+                </button>
+
+                <!-- Connection Panel (Google Sheet Live Sync Control) -->
+                <div class="pt-6 border-t border-brand-800 mt-6 space-y-3">
+                    <p class="text-xs font-semibold text-teal-300 uppercase tracking-wider px-3 mb-1">การเชื่อมต่อ Google Sheets</p>
+                    
+                    <div class="px-3">
+                        <div id="sync-status-badge" class="flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                            </span>
+                            <span id="sync-status-text">กำลังโหลดข้อมูล...</span>
+                        </div>
+                    </div>
+
+                    <div class="px-3">
+                        <label class="text-[10px] text-teal-300 font-semibold block mb-1">ID แผ่นงาน (Spreadsheet ID)</label>
+                        <input type="text" id="sheet-id-input" value="1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo" 
+                               class="w-full text-xs bg-brand-950 border border-brand-700 text-white rounded-lg px-2.5 py-2 focus:ring-1 focus:ring-teal-400 focus:outline-none"
+                               placeholder="กรอก Spreadsheet ID...">
+                    </div>
+
+                    <div class="px-3 flex flex-col gap-2">
+                        <button onclick="fetchGoogleSheetData()" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-rotate mr-1.5"></i> ซิงค์ข้อมูลสด (CORS-Free)
+                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="openMappingModal()" class="flex-1 bg-brand-800 hover:bg-brand-700 text-teal-300 hover:text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center" title="ตั้งค่าจับคู่คอลัมน์">
+                                <i class="fa-solid fa-gears mr-1.5"></i> ตั้งค่าจับคู่
+                            </button>
+                            <button onclick="showInstructions()" class="bg-brand-800 hover:bg-brand-700 text-teal-300 hover:text-white px-3 py-2 rounded-lg text-xs" title="วิธีแชร์เพื่อเชื่อมต่อคลาวด์">
+                                <i class="fa-solid fa-circle-question"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-2">
+                    <a href="https://docs.google.com/spreadsheets/d/1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo/edit?usp=sharing" target="_blank" class="flex items-center px-4 py-2 text-xs text-teal-200 hover:text-white hover:underline">
+                        <i class="fa-solid fa-file-excel mr-2 text-green-400"></i>
+                        เปิดดูไฟล์ Google Sheet
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-brand-950 border-t border-brand-800 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-sm">
+                        AD
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-xs font-semibold text-white">ผู้บริหารระบบ</p>
+                        <p class="text-[10px] text-teal-400">Hospital Admin</p>
+                    </div>
+                </div>
+                <button onclick="toggleDarkMode()" class="text-teal-400 hover:text-white p-1 rounded-lg hover:bg-brand-800 transition-colors" title="สลับโหมดแสง/มืด">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Mobile header -->
+            <header class="flex md:hidden items-center justify-between h-16 px-4 bg-brand-900 text-white flex-shrink-0">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-square-poll-vertical text-teal-400 text-2xl mr-2"></i>
+                    <span class="text-md font-bold">Hosp-Satisfaction</span>
+                </div>
+                <div class="flex items-center space-y-0 space-x-2">
+                    <button onclick="toggleDarkMode()" class="text-teal-400 hover:text-white p-2">
+                        <i id="theme-icon-mobile" class="fa-solid fa-moon"></i>
+                    </button>
+                    <select id="mobile-tab-select" onchange="switchTab(this.value)" class="bg-brand-850 text-white text-xs border border-brand-700 rounded-lg px-2 py-1 focus:ring-1 focus:ring-teal-400">
+                        <option value="overview">ภาพรวมประเมิน</option>
+                        <option value="analysis">วิเคราะห์เชิงลึก</option>
+                        <option value="feedback">ความคิดเห็นผู้รับบริการ</option>
+                        <option value="insights">ข้อแนะนำเชิงกลยุทธ์</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Secondary Top Bar: Filter Panel -->
+            <section class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0 shadow-sm transition-colors duration-200" id="filter-section">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 flex items-center">
+                            <span id="tab-title">แดชบอร์ดสรุปผลความพึงพอใจผู้รับบริการ</span>
+                            <span class="ml-2 bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded-full" id="filtered-count">0 รายการ</span>
+                        </h1>
+                        <p class="text-xs text-slate-500 mt-1">สรุปข้อมูลความพึงพอใจ 5 หัวข้อหลักแบบเรียลไทม์ผ่าน Google Sheets ด้วยระบบ JSONP ไร้ CORS</p>
+                    </div>
+                    
+                    <!-- Filters Grid -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Filter Service Type -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ประเภทการรับบริการ</label>
+                            <select id="filter-service" onchange="applyFilters()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                                <option value="all">บริการทั้งหมด (All Services)</option>
+                                <option value="ฉีดยา ทำแผล">ฉีดยา ทำแผล</option>
+                                <option value="เจ็บป่วยทั่วไป">เจ็บป่วยทั่วไป</option>
+                                <option value="อุบัติเหตุฉุกเฉิน">อุบัติเหตุฉุกเฉิน</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Year/Timeframe -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่วงปีประเมิน</label>
+                            <select id="filter-timeframe" onchange="applyFilters()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                                <option value="all">ทุกช่วงเวลา (2023 - 2026)</option>
+                                <option value="2023">ปี 2023</option>
+                                <option value="2024">ปี 2024</option>
+                                <option value="2025">ปี 2025</option>
+                                <option value="2026">ปี 2026</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Satisfaction Rating level -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">กลุ่มระดับคะแนน</label>
+                            <select id="filter-rating" onchange="applyFilters()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                                <option value="all">ทุกกลุ่มคะแนน</option>
+                                <option value="high">ดีเยี่ยม - ดีมาก (4.0 - 5.0)</option>
+                                <option value="medium">ปานกลาง (3.0 - 3.9)</option>
+                                <option value="low">ต้องปรับปรุงเร่งด่วน (< 3.0)</option>
+                            </select>
+                        </div>
+
+                        <!-- Reset Button -->
+                        <div class="flex flex-col justify-end pt-5">
+                            <button onclick="resetFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg flex items-center transition-all duration-150">
+                                <i class="fa-solid fa-filter-circle-xmark mr-1.5"></i> ล้างตัวกรอง
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Scrolling View Area -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6" id="dashboard-scrollable">
+
+                <!-- Connection Warning Block if using offline data -->
+                <div id="offline-alert" class="hidden bg-amber-50 border-l-4 border-l-amber-500 p-4 rounded-xl flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg mt-0.5 animate-bounce"></i>
+                    <div class="text-xs text-amber-800">
+                        <p class="font-bold">รายงานผลออฟไลน์: กำลังจำลองข้อมูลเนื่องจากยังไม่ได้รับสิทธิ์เข้าถึงชีต</p>
+                        <p class="mt-1 font-medium text-amber-700">สเปรดชีตของคุณต้องได้รับการตั้งค่าสิทธิ์แชร์ทั่วไปเป็น <strong>"ทุกคนที่มีลิงก์ (Anyone with the link)"</strong> และกำหนดบทบาทเป็น <strong>"ผู้มีสิทธิ์อ่าน (Viewer)"</strong> เพื่อให้หน้าเว็บนี้สามารถดึงข้อความมาได้ <button onclick="showInstructions()" class="underline font-bold text-teal-800">คลิกดูภาพคำแนะนำขั้นตอนที่นี่</button></p>
+                    </div>
+                </div>
+
+                <!-- 4 KPI SUMMARY CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpi-panel">
+                    <!-- Total Respondents -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">จำนวนผู้ประเมินรวม</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800 mt-2" id="kpi-total">0</h3>
+                            <p class="text-[11px] text-emerald-600 mt-1 font-semibold flex items-center">
+                                <i class="fa-solid fa-check-circle mr-1"></i> เชื่อมโยงระบบคลาวด์สำเร็จ
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+                            <i class="fa-solid fa-users text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Average Score -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">คะแนนความพึงพอใจเฉลี่ย</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800 mt-2" id="kpi-avg">0.00 <span class="text-xs font-normal text-slate-400">/ 5.0</span></h3>
+                            <div class="flex items-center text-amber-500 mt-1 text-xs" id="kpi-stars">
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                                <i class="fa-regular fa-star"></i>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                            <i class="fa-solid fa-star-half-stroke text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- CSAT Percentage -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">ดัชนี CSAT (%)</p>
+                            <h3 class="text-3xl font-extrabold text-slate-800 mt-2" id="kpi-csat">0%</h3>
+                            <p class="text-[11px] text-slate-500 mt-1">สัดส่วนผู้ให้คะแนนระดับ 4-5 ดาว</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <i class="fa-solid fa-smile text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Complaint Rate -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">อัตราข้อร้องเรียนสำคัญ</p>
+                            <h3 class="text-3xl font-extrabold text-rose-600 mt-2" id="kpi-complaint">0%</h3>
+                            <p class="text-[11px] text-rose-500 mt-1 font-semibold flex items-center" id="kpi-complaint-trend">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i> ตรวจจับด้วยคีย์เวิร์ดเรียลไทม์
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
+                            <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: OVERVIEW -->
+                <div id="tab-content-overview" class="space-y-6">
+                    <!-- Top Chart Row (Topic Averages + Service Distribution) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart 1: Topic Averages -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm lg:col-span-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">คะแนนเฉลี่ยจำแนกตามหัวข้อประเมินการบริการ</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">เทียบระดับคะแนน 1-5 (5 คือพึงพอใจมากที่สุด)</p>
+                                </div>
+                                <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded">5 หัวข้อประเมิน</span>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="chart-topics"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Service Distribution -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">สัดส่วนผู้รับบริการแบ่งตามประเภท</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">แบ่งตามการจัดสรรหมวดหมู่บริการ</p>
+                                </div>
+                            </div>
+                            <div class="h-80 flex items-center justify-center relative">
+                                <canvas id="chart-distribution"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Chart Row (Satisfaction Trend over time + Score Breakdown) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart 3: Satisfaction Trend -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm lg:col-span-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">แนวโน้มระดับความพึงพอใจรายปี/ไตรมาส (Satisfaction Trend)</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">คะแนนเฉลี่ยถ่วงน้ำหนักตามช่วงเวลาผู้รับบริการส่งแบบสอบถาม</p>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="chart-trend"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 4: Score Distribution Stacked -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">สัดส่วนระดับดาวในภาพรวม</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">ความถี่ของระดับคะแนนประเมินดิบ</p>
+                                </div>
+                            </div>
+                            <div class="h-80 flex items-center justify-center">
+                                <canvas id="chart-stars-breakdown"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: DEEP ANALYSIS -->
+                <div id="tab-content-analysis" class="hidden space-y-6">
+                    <!-- Service Comparison Matrix Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm lg:col-span-4 flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">ดัชนีคะแนนเปรียบเทียบแผนกบริการ</h4>
+                                <p class="text-xs text-slate-400 mt-1">การเปรียบเทียบคะแนนเฉลี่ยระหว่างแผนกบริการต่าง ๆ ชี้ให้เห็นถึงความต้องการทรัพยากรและการจัดการที่แตกต่างกันอย่างชัดเจน</p>
+                                
+                                <div class="space-y-4 mt-6">
+                                    <!-- dressing progress -->
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                            <span>ฉีดยา ทำแผล</span>
+                                            <span class="text-teal-600 font-bold" id="compare-dressing-val">0.00 / 5.0</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div id="compare-dressing-bar" class="bg-teal-500 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- general progress -->
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                            <span>เจ็บป่วยทั่วไป</span>
+                                            <span class="text-indigo-600 font-bold" id="compare-general-val">0.00 / 5.0</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div id="compare-general-bar" class="bg-indigo-500 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- emergency progress -->
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                            <span>อุบัติเหตุฉุกเฉิน</span>
+                                            <span class="text-rose-600 font-bold" id="compare-emergency-val">0.00 / 5.0</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div id="compare-emergency-bar" class="bg-rose-500 h-2 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-teal-50 rounded-xl border border-teal-100 text-xs text-teal-800">
+                                <i class="fa-solid fa-lightbulb mr-1.5 text-teal-600"></i>
+                                <strong>ข้อสังเกตเชิงลึก:</strong> แผนก "อุบัติเหตุฉุกเฉิน" มีอัตราคะแนนเฉลี่ยที่ต่ำกว่ามาตรฐานทั่วไป (ต่ำกว่า 4.0 ดาว) มักเกิดจากปัจจัยด้านระยะเวลาและการประสานงานแพทย์เฉพาะทาง
+                            </div>
+                        </div>
+
+                        <!-- Heatmap Comparison / Detail Cards -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm lg:col-span-8">
+                            <h4 class="text-sm font-bold text-slate-800 mb-2">ตารางวิเคราะห์คะแนนหัวข้อย่อยแยกรายบริการ (Service Matrix Rating)</h4>
+                            <p class="text-xs text-slate-400 mb-4">แสดงผลคะแนนเฉลี่ยแยกย่อยตามกลุ่มบริการอย่างละเอียด เพื่อชี้จุดอ่อนเฉพาะด้าน</p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4 font-bold">ประเภทบริการ</th>
+                                            <th class="py-3 px-4 font-bold text-center">หัวข้อ 1: กิริยามารยาท</th>
+                                            <th class="py-3 px-4 font-bold text-center">หัวข้อ 2: แต่งกาย/สุภาพ</th>
+                                            <th class="py-3 px-4 font-bold text-center">หัวข้อ 3: ความกระตือรือร้น</th>
+                                            <th class="py-3 px-4 font-bold text-center">หัวข้อ 4: ความรู้ความสามารถ</th>
+                                            <th class="py-3 px-4 font-bold text-center">หัวข้อ 5: เท่าเทียมทั่วถึง</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="matrix-tbody" class="divide-y divide-slate-100 font-medium text-slate-700">
+                                        <!-- Will render dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Heatmap Legend -->
+                            <div class="flex items-center justify-end gap-4 mt-6 text-[11px] font-semibold text-slate-500">
+                                <span>ระดับคะแนน: </span>
+                                <span class="flex items-center"><span class="w-3 h-3 bg-red-100 border border-red-200 rounded-sm mr-1"></span> < 3.5 (ปรับปรุงเร่งด่วน)</span>
+                                <span class="flex items-center"><span class="w-3 h-3 bg-amber-100 border border-amber-200 rounded-sm mr-1"></span> 3.5 - 4.2 (ปานกลาง)</span>
+                                <span class="flex items-center"><span class="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded-sm mr-1"></span> > 4.2 (ดีเยี่ยม)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weak points vs Strong points grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Strong points card -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+                            <h4 class="text-sm font-bold text-slate-800 flex items-center mb-3">
+                                <i class="fa-solid fa-circle-check text-emerald-500 mr-2 text-base"></i> จุดแข็งของการบริการ (Strong Points)
+                            </h4>
+                            <ul class="space-y-3 text-xs text-slate-600">
+                                <li class="flex items-start">
+                                    <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 text-[10px] font-bold mr-2 mt-0.5">1</span>
+                                    <div>
+                                        <strong class="text-slate-800">ความเหมาะสมในการแต่งกาย/บุคลิก (เฉลี่ยสูงที่สุด 4.54):</strong>
+                                        <p class="mt-0.5">ผู้ประเมินส่วนใหญ่เห็นตรงกันว่า เจ้าหน้าที่เกือบทุกรายแต่งกายสะอาดเรียบร้อย สุภาพ และมีบุคลิกภาพที่น่าเลื่อมใสเสื่อมศรัทธา เป็นมาตรฐานที่ดี</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="bg-emerald-100 text-emerald-800 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 text-[10px] font-bold mr-2 mt-0.5">2</span>
+                                    <div>
+                                        <strong class="text-slate-800">กิริยามารยาทและความเป็นมิตรของพนักงาน:</strong>
+                                        <p class="mt-0.5">พยาบาลและพนักงานหน้าเคาน์เตอร์มีความเป็นมิตร ยิ้มแย้มแจ่มใสและให้เกียรติผู้มารับบริการ โดยมีคะแนนเป็นอันดับสองในกลุ่มประเมินหลัก</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Weak points card -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
+                            <h4 class="text-sm font-bold text-slate-800 flex items-center mb-3">
+                                <i class="fa-solid fa-circle-xmark text-rose-500 mr-2 text-base"></i> จุดอ่อนที่ต้องได้รับการพัฒนาเร่งด่วน (Weak Points)
+                            </h4>
+                            <ul class="space-y-3 text-xs text-slate-600">
+                                <li class="flex items-start">
+                                    <span class="bg-rose-100 text-rose-800 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 text-[10px] font-bold mr-2 mt-0.5">1</span>
+                                    <div>
+                                        <strong class="text-slate-800">ความกระตือรือร้นและความกระฉับกระเฉงในการให้บริการ:</strong>
+                                        <p class="mt-0.5">ความล่าช้าในขั้นตอนล้างแผลและการรอคอยแพทย์เวรนอกเวลาทำคะแนนฉุดตกลงอย่างมีนัยสำคัญ โดยเฉพาะในช่วงเวลาเย็น (หลัง 18:00 น.) เป็นต้นไป</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="bg-rose-100 text-rose-800 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 text-[10px] font-bold mr-2 mt-0.5">2</span>
+                                    <div>
+                                        <strong class="text-slate-800">ความรู้ความสามารถในการชี้แจง/ตอบข้อซักถามและการบริการช่วงเปลี่ยนเวร:</strong>
+                                        <p class="mt-0.5">มีการประเมินในระดับปานกลางจากเคสพ่นยาที่ไม่มีการอธิบายลำดับขั้นและไม่มีการสังเกตอาการหลังจากนั้น รวมถึงขาดแพทย์เฉพาะทางในช่วงวันหยุด</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: PATIENT FEEDBACK LIST -->
+                <div id="tab-content-feedback" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                        <!-- Table header actions -->
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">ตารางความคิดเห็นและข้อเสนอแนะของผู้มารับบริการ</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">รวมประโยคข้อความร้องเรียน/คำชื่นชมจริงที่บันทึกไว้ในระบบประเมินผล</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <!-- Search bar -->
+                                <div class="relative">
+                                    <input type="text" id="search-input" onkeyup="applyFilters()" placeholder="ค้นหาตามข้อความ/ไอดี..." class="text-xs border border-slate-300 rounded-lg pl-8 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                </div>
+                                <!-- Download CSV button -->
+                                <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center transition-all duration-150">
+                                    <i class="fa-solid fa-file-arrow-down mr-1.5"></i> ส่งออกข้อมูลเป็น CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Feedback stats counter -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl mb-6 border border-slate-100 text-center">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">บันทึกความคิดเห็นมีข้อร้องเรียน</p>
+                                <p class="text-base font-extrabold text-rose-600 mt-1" id="count-complaint-txt">0 รายการ</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">บันทึกความคิดเห็นชื่นชม/ทั่วไป</p>
+                                <p class="text-base font-extrabold text-emerald-600 mt-1" id="count-pos-txt">0 รายการ</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ไม่มีความคิดเห็นเพิ่มเติม</p>
+                                <p class="text-base font-extrabold text-slate-500 mt-1" id="count-none-txt">0 รายการ</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">แสดงผลตามตัวกรอง</p>
+                                <p class="text-base font-extrabold text-teal-600 mt-1" id="count-filtered-txt">0 รายการ</p>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                        <th class="py-3 px-4 font-bold">วัน-เวลาประเมิน</th>
+                                        <th class="py-3 px-4 font-bold">รหัสส่งแบบประเมิน</th>
+                                        <th class="py-3 px-4 font-bold">ประเภทบริการ</th>
+                                        <th class="py-3 px-4 font-bold text-center">คะแนนเฉลี่ยตัวชี้วัด</th>
+                                        <th class="py-3 px-4 font-bold">สถานะความเห็น</th>
+                                        <th class="py-3 px-4 font-bold w-1/3">ข้อร้องเรียน/ข้อเสนอแนะเพิ่มเติม</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="feedback-tbody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                    <!-- Will render dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination or Empty state -->
+                        <div id="feedback-empty" class="hidden py-12 text-center text-slate-400">
+                            <i class="fa-solid fa-comment-slash text-4xl mb-3 block"></i>
+                            <p class="text-sm font-semibold">ไม่พบความเห็นตามตัวเลือกหรือตัวกรองที่เลือกไว้</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: ACTIONABLE INSIGHTS -->
+                <div id="tab-content-insights" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+                                <i class="fa-solid fa-lightbulb text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-slate-800">รายงานการวิเคราะห์เชิงลึกและแนวทางการปรับปรุงเชิงกลยุทธ์ (Strategic Action Plan)</h4>
+                                <p class="text-xs text-slate-400">ถอดรหัสความคิดเห็นและคะแนนของโรงพยาบาลจากสเปรดชีตสู่แผนปฏิบัติการจริงเพื่อเพิ่มประสิทธิภาพและอัตราความพึงพอใจการบริการ</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
+                            <!-- Insight 1: Waiting bottleneck -->
+                            <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                        <i class="fa-solid fa-clock mr-1"></i> ประเด็นที่ 1: ปัญหาคอขวดด้านระยะเวลาช่วงนอกเวลาและวันหยุด
+                                    </span>
+                                    <h5 class="text-sm font-bold text-slate-800 mt-4 mb-2">ระยะเวลารอพบคอยแพทย์และคิวทำแผล/ล้างแผล (โดยเฉพาะหลัง 18:00 น. และวันหยุด)</h5>
+                                    
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        <strong>เสียงจากผู้รับบริการจริง:</strong> <br>
+                                        <span class="italic text-rose-700 font-medium">"วันหยุดมีหมอคนเดียว คนไข้กลับบ้านหลายรายไม่ไหวกับการรอ", "6โมงเย็นขึ้นไป บรีการช้ามาก ต้องรอแพทย์เข้า", "ล้างแผลต้องรอเกือบ 2 ชั่วโมง", "กูมาตั้งแต่ 17:00 จนถึง 21:00 ยังไม่เสร็จเลย"</span>
+                                    </p>
+
+                                    <div class="mt-4 pt-4 border-t border-rose-200/50">
+                                        <p class="text-xs font-bold text-slate-800 mb-1.5"><i class="fa-solid fa-clipboard-list text-teal-600 mr-1"></i> แผนปฏิบัติการที่เสนอแนะ (Recommended Actions):</p>
+                                        <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1">
+                                            <li>จัดตารางพยาบาลพาร์ทไทม์ (Part-time) เพิ่มเติมเฉพาะเวลาสูงสุด (Peak hours) 17:00 - 20:00 น. เพื่อระบายคิวทำแผล</li>
+                                            <li>ปรับระบบการแจ้งเตือนคิวแพทย์ (ระบบดิจิทัลหรือ SMS) เพื่อให้ผู้รับบริการสามารถรู้คิวเวลาโดยประมาณ</li>
+                                            <li>เพิ่มแพทย์เวรนอกเวลาในช่วงวันหยุดนักขัตฤกษ์เป็น 2 ท่านแทนคนเดียว</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex items-center justify-between text-xs">
+                                    <span class="font-bold text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i> ความเร่งด่วน: วิกฤต (Critical)</span>
+                                    <span class="text-slate-400">KPI เป้าหมาย: รอนานไม่เกิน 30 นาที</span>
+                                </div>
+                            </div>
+
+                            <!-- Insight 2: Nebulizer Case -->
+                            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                        <i class="fa-solid fa-lungs-cough mr-1"></i> ประเด็นที่ 2: มาตรฐานกระบวนการพ่นยาพ่นละอองลอย
+                                    </span>
+                                    <h5 class="text-sm font-bold text-slate-800 mt-4 mb-2">ขาดขั้นตอนประเมินสัญญาณชีพ (Vital signs) ก่อนผู้ป่วยกลับบ้านและความใส่ใจของพยาบาลในเวรดึก</h5>
+                                    
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        <strong>เสียงจากผู้รับบริการจริง:</strong> <br>
+                                        <span class="italic text-amber-700 font-medium">"รอบที่ 3 พ่นยาให้เปิดเกย์ O2 พ่นกันเอง... บอกเวลากลับพ่นเอง เจ้าหน้าที่กลับเข้าห้อง ปิดประตู ปิดไฟ ไม่มีการมาประเมินคนไข้ก่อนกลับบ้าน ไม่ดูผู้ป่วยพ่นยาอยู่กับญาติ..."</span>
+                                    </p>
+
+                                    <div class="mt-4 pt-4 border-t border-amber-200/50">
+                                        <p class="text-xs font-bold text-slate-800 mb-1.5"><i class="fa-solid fa-clipboard-list text-teal-600 mr-1"></i> แผนปฏิบัติการที่เสนอแนะ (Recommended Actions):</p>
+                                        <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1">
+                                            <li>บังคับใช้มาตรการพ่นยาอย่างเคร่งครัด (Protocol Checklists): พยาบาลต้องเป็นผู้เตรียม ประกอบอุปกรณ์ และเปิดออกซิเจนให้ผู้ป่วย 100%</li>
+                                            <li>ห้ามคนไข้หรือญาติเปิดแก๊สออกซิเจนทางการแพทย์เองเด็ดขาดเพื่อความปลอดภัยสูงสุด</li>
+                                            <li>ทำแบบบันทึกประเมินอาการก่อน-หลังพ่นยา (Pre-Post Nebulizer Assessment Score) ทุกคนไข้ และลงชื่อยืนยันการประเมิน</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex items-center justify-between text-xs">
+                                    <span class="font-bold text-amber-600"><i class="fa-solid fa-circle-exclamation mr-1"></i> ความเร่งด่วน: สูงมาก (High)</span>
+                                    <span class="text-slate-400">KPI เป้าหมาย: ความผิดพลาดเป็นศูนย์ (Zero defect)</span>
+                                </div>
+                            </div>
+
+                            <!-- Insight 3: Doctor Attendance / Snake bite case -->
+                            <div class="bg-teal-50 border border-teal-200 rounded-2xl p-5 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-teal-100 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                        <i class="fa-solid fa-user-doctor mr-1"></i> ประเด็นที่ 3: การมาเวรตรงต่อเวลาและความรับผิดชอบในห้องฉุกเฉิน (ER)
+                                    </span>
+                                    <h5 class="text-sm font-bold text-slate-800 mt-4 mb-2">เคสฉุกเฉินขั้นวิกฤตได้รับการดูแลล่าช้าเนื่องจากขั้นตอนรอแพทย์เฉพาะทางเข้าเวร</h5>
+                                    
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        <strong>เสียงจากผู้รับบริการจริง:</strong> <br>
+                                        <span class="italic text-teal-800 font-medium">"แนะนำหมอใหญ่ให้เข้าเวรตรงต่อเวลาด้วยไม่ใช้ให้คนใช้รอ วันนี้มีเคสคนโดนงูกัดด้วยแต่ต้องรอหมอเกือบชม... รพ.เจาะไอร้อง..."</span>
+                                    </p>
+
+                                    <div class="mt-4 pt-4 border-t border-teal-200/50">
+                                        <p class="text-xs font-bold text-slate-800 mb-1.5"><i class="fa-solid fa-clipboard-list text-teal-600 mr-1"></i> แผนปฏิบัติการที่เสนอแนะ (Recommended Actions):</p>
+                                        <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1">
+                                            <li>จัดระบบตรวจจับการลงเวลาทำงาน (Biometrics/GPS) ในห้องตรวจและ ER และทำรายงานผู้บริหารโดยตรงรายสัปดาห์</li>
+                                            <li>ปรับปรุงขั้นตอนรับเคสฉุกเฉินสูงสุด (Red Code) เช่น เคสงูกัด ให้สามารถดำเนินการปฐมพยาบาลเบื้องต้น/ให้ Antivenom ตามแผนการรักษาพยาบาลด่วนได้ทันทีโดยไม่ต้องรอหมอลงชื่อหากมีข้อบ่งชี้</li>
+                                            <li>ตั้งกฎข้อลงโทษหากแพทย์เข้าเวรสายเกิน 15 นาที สำหรับตารางเวรอุบัติเหตุฉุกเฉิน</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex items-center justify-between text-xs">
+                                    <span class="font-bold text-teal-700"><i class="fa-solid fa-circle-exclamation mr-1"></i> ความเร่งด่วน: ปานกลาง (Medium)</span>
+                                    <span class="text-slate-400">KPI เป้าหมาย: แพทย์ลงเวรเร็วกว่า 98%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Instruction Modal (How to Share Sheet) -->
+    <div id="instruction-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 text-teal-600">
+                    <i class="fa-solid fa-link text-xl"></i>
+                    <h3 class="text-md font-bold text-slate-900 dark:text-white">วิธีกำหนดสิทธิ์เพื่อซิงค์ข้อมูลกับ Google Sheets</h3>
+                </div>
+                <button onclick="hideInstructions()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-3 leading-relaxed">
+                <p>แดชบอร์ดนี้เชื่อมต่อข้อมูลผ่าน Google Visualization API (JSONP) จำเป็นต้องตั้งค่าความปลอดภัยของเอกสารใหู่อยู่ในกลุ่ม "คนที่มีลิงก์มีสิทธิ์ดู" จึงจะสามารถซิงค์ข้อมูลได้สำเร็จโดยไม่มีปัญหา CORS:</p>
+                
+                <ol class="list-decimal pl-4 space-y-2">
+                    <li>เปิดหน้าชีต <a href="https://docs.google.com/spreadsheets/d/1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo/edit?usp=sharing" target="_blank" class="text-teal-600 underline font-bold">Google Sheets ที่คุณกำลังใช้งานอยู่</a></li>
+                    <li>กดปุ่ม <span class="bg-teal-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">แชร์ (Share)</span> บริเวณมุมขวาบน</li>
+                    <li>ที่หัวข้อ <strong>"การเข้าถึงทั่วไป" (General Access)</strong> ให้เปลี่ยนจาก <strong>"จำกัด" (Restricted)</strong> เป็น <strong>"ทุกคนที่มีลิงก์" (Anyone with the link)</strong></li>
+                    <li>ตั้งระดับสิทธิ์ด้านขวามือให้เป็น <strong>"ผู้มีสิทธิ์อ่าน" (Viewer)</strong> เท่านั้น</li>
+                    <li>คัดลอก **ID** จาก URL ของชีต (ส่วนระหว่าง <code>/d/</code> ถึง <code>/edit</code>) หรือวาง URL เต็มในช่อง Spreadsheet ID ในแถบเมนูด้านซ้าย แล้วกดปุ่มซิงค์</li>
+                </ol>
+            </div>
+            <div class="pt-2">
+                <button onclick="hideInstructions()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors">
+                    เข้าใจแล้ว, เริ่มซิงค์เลย!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Mapping Modal -->
+    <div id="mapping-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 my-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 text-teal-600">
+                    <i class="fa-solid fa-gears text-xl"></i>
+                    <h3 class="text-md font-bold text-slate-900 dark:text-white">ตั้งค่าการจับคู่คอลัมน์ (Column Mapping)</h3>
+                </div>
+                <button onclick="closeMappingModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500">กำหนดคอลัมน์จากสเปรดชีตให้ตรงกับโครงสร้างข้อมูลเพื่อความถูกต้องแม่นยำสูงสุดในการประมวลผล</p>
+            
+            <div class="space-y-3 pt-2 text-xs max-h-[60vh] overflow-y-auto pr-1">
+                <!-- Date/Time Mapping -->
+                <div class="grid grid-cols-2 gap-2 items-center">
+                    <label class="font-bold text-slate-700 dark:text-slate-300">วัน-เวลาประเมิน:</label>
+                    <select id="map-date" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                </div>
+                <!-- Service Type Mapping -->
+                <div class="grid grid-cols-2 gap-2 items-center">
+                    <label class="font-bold text-slate-700 dark:text-slate-300">ประเภทงานบริการ:</label>
+                    <select id="map-type" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                </div>
+                <!-- Scores Mapping (Q1 - Q5) -->
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <p class="font-bold text-slate-500 mb-2 uppercase text-[10px]">คอลัมน์คะแนน 5 ข้อประเมินหลัก</p>
+                    <div class="space-y-2">
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <label class="text-slate-700 dark:text-slate-300">ข้อ 1 กิริยามารยาท:</label>
+                            <select id="map-q1" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <label class="text-slate-700 dark:text-slate-300">ข้อ 2 การแต่งกายสุภาพ:</label>
+                            <select id="map-q2" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <label class="text-slate-700 dark:text-slate-300">ข้อ 3 ความกระตือรือร้น:</label>
+                            <select id="map-q3" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <label class="text-slate-700 dark:text-slate-300">ข้อ 4 ความรู้ความสามารถ:</label>
+                            <select id="map-q4" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <label class="text-slate-700 dark:text-slate-300">ข้อ 5 บริการอย่างเท่าเทียม:</label>
+                            <select id="map-q5" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                        </div>
+                    </div>
+                </div>
+                <!-- Comment Mapping -->
+                <div class="grid grid-cols-2 gap-2 items-center pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <label class="font-bold text-slate-700 dark:text-slate-300">ข้อคิดเห็น/ร้องเรียนเพิ่มเติม:</label>
+                    <select id="map-comment" class="border border-slate-300 rounded-lg p-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></select>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button onclick="closeMappingModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs transition-colors dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600">
+                    ยกเลิก
+                </button>
+                <button onclick="saveAndApplyMapping()" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors">
+                    บันทึกแผนผังคอลัมน์
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Block for Data Fetching & Core Logic -->
+    <script>
+        let currentTab = 'overview';
+        let isDarkMode = false;
+        let activeDatabase = []; // Stores the currently parsed database (real or backup)
+        let filteredData = [];
+        let parsedRawRowsGlobal = []; // Keeps global reference to the parsed raw sheets content
+        let sheetHeadersGlobal = [];  // Keeps header list
+        let gvizRowsGlobal = [];      // Stores original gviz rows format for remap triggers
+        let jsonpTimeout = null;      // Stores active timeout tracker
+
+        // Column mapping configurations
+        let columnMapping = {
+            date: -1,
+            id: -1,
+            resId: -1,
+            type: -1,
+            comment: -1,
+            scores: [-1, -1, -1, -1, -1]
+        };
+
+        // Chart.js Instances
+        let chartTopicsInstance = null;
+        let chartDistInstance = null;
+        let chartTrendInstance = null;
+        let chartStarsInstance = null;
+
+        // Local 150 offline backup records
+        const backupPatterns = [
+            { id: 'zLrKJR', resId: 'qWo8a9', type: 'ฉีดยา ทำแผล', scores: [5, 5, 4, 3, 4], comment: '' },
+            { id: '5MGdAZ', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: '8MPdXP', resId: 'OYdxJp', type: 'อุบัติเหตุฉุกเฉิน', scores: [4, 5, 4, 5, 4], comment: '' },
+            { id: 'B0QDV1', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: 'dvDjXV', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [4, 4, 4, 4, 4], comment: '' },
+            { id: '9MEvYE', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [4, 5, 4, 5, 4], comment: '' },
+            { id: 'rvdL9o', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [4, 5, 5, 4, 5], comment: '' },
+            { id: '6MOv6Y', resId: 'OYdxJp', type: 'เจ็บป่วยทั่วไป', scores: [5, 5, 5, 4, 5], comment: '' },
+            { id: 'xvPy5v', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [4, 3, 4, 5, 5], comment: '' },
+            { id: 'bv8K4Z', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: '5MG8Eo', resId: 'OYdxJp', type: 'เจ็บป่วยทั่วไป', scores: [5, 5, 5, 4, 5], comment: '' },
+            { id: '9MEpy1', resId: 'OYdxJp', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' }
+        ];
+
+        const specificBackupRecords = [
+            { id: 'vKxqrv', resId: 'qWo8a9', date: '2024-06-11 12:17:52', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: 'บริการดี ประทับใจมากค่ะ' },
+            { id: 'OV8vaM', resId: '9EVYd5', date: '2024-07-14 09:36:42', type: 'เจ็บป่วยทั่วไป', scores: [2, 2, 2, 3, 2], comment: 'หมอมาตรวจช้ามากรู้ว่าวันหยุดมีหมอคนเดียว ซึ่งทำให้คนไข้กลับบ้านหลายรายไม่ไหวกับการรอหมอ' },
+            { id: '4DzZeY', resId: '6AOq7k', date: '2024-09-26 08:36:18', type: 'เจ็บป่วยทั่วไป', scores: [1, 5, 1, 1, 1], comment: '' },
+            { id: '2zPbpM', resId: 'OdxMDk', date: '2024-10-04 14:57:04', type: 'เจ็บป่วยทั่วไป', scores: [2, 3, 3, 3, 3], comment: '' },
+            { id: 'r8XDYp', resId: 'MMz2Xg', date: '2024-11-24 06:34:07', type: 'ฉีดยา ทำแผล', scores: [2, 2, 1, 3, 3], comment: '' },
+            { id: 'jaeyBdQ', resId: '8VeE5l', date: '2025-04-05 12:30:05', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 4, 3, 3, 3], comment: '6โมงเย็นขึ้นไป บรีการช้ามาก ต้องรอแพทย์เข้าซึ่งแพทย์มาตรวจช้ามาก' },
+            { id: 'J9dBDxz', resId: 'OZW9x7', date: '2025-04-28 07:20:24', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: 'lbla7bo', resId: 'G8ypVO', date: '2025-08-10 03:40:01', type: 'ฉีดยา ทำแผล', scores: [3, 4, 2, 3, 3], comment: 'ขอไห้พนักงานบริการไห้เร็วหน่อยคับ ล้างแผลต้องรอเกือบ2ชั่วโมง ถ้าผมไห้คะแนแค่2เองคับ' },
+            { id: 'aQaLyZB', resId: '9qqJLRV', date: '2025-09-26 12:14:37', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 4, 2, 4, 3], comment: 'แนะนำหมอใหญ่ให้เข้าเวรตรงต่อเวลาด้วยไม่ใช้ให้คนใช้ รอ วันนี้มีเคสคนโดนงูกัดด้วยแต่ต้องรอหมอเกือบชม. ถ้าม่มีความรับผิดชอบก็ลาออกเถอะครับสงสารคนใข กูมารอหมอเป็นชม.เคสวันนี้26/9/68 รพเจาะไอร้องทีมีหมอใหญ่หวยที่สุด..' },
+            { id: '68pgeqY', resId: '8VeE5l', date: '2025-09-26 13:38:16', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 3, 3, 3, 3], comment: 'ฝากผู้ดูแล้ด้วยถ้าหมอใหญ่ม่ยากทำงานก็ควรลาออก กูมาจังแต่17:00 จนถึง21แล้ยังม่เสร็จเหี้ยอัไรเลย' },
+            { id: 'Xx72eae', resId: 'KYVGBKV', date: '2025-12-16 22:15:31', type: 'เจ็บป่วยทั่วไป', scores: [4, 4, 3, 4, 3], comment: 'มาด้วยเหนื่อย ต้องพ่นยา 3 dose รอบ1-2 มาพ่นยาให้ รอบที่3 ให้คนไข้/ญาติ เปิดเกย์ O2 พ่นยาเอง บริการตัวเอง ให้ยากลับบ้านเรียบร้อย พร้อมบอกเวลาพ่นยาให้พ่นเอง แต่เจ้าหน้าที่กลับเข้าห้อง ปิดประตู และปิดไฟ ไม่มีการมาประเมินผู้ป่วยก่อนกลับบ้านอีกครั้ง ถึงจะพ่นยาเองได้ แต่ก็เป็นหน้าที่ของพยาบาลที่ต้องมาดูผู้ป่วยด้วย ไม่ใช่ให้พ่นยาอยู่กับญาติ ไม่มีเจ้าหน้าที่มาคอยสังเกตอาการเลย' },
+            { id: 'peAKy2Z', resId: 'Y5kDjD6', date: '2026-06-05 02:27:21', type: 'อุบัติเหตุฉุกเฉิน', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: 'q5BQ705', resId: 'Y5kDjD6', date: '2026-06-09 07:06:08', type: 'ฉีดยา ทำแผล', scores: [5, 5, 4, 5, 5], comment: 'ให้บริการ ดีมาก' },
+            { id: 'rDK9Ryo', resId: 'Y5kDjD6', date: '2026-06-09 07:06:30', type: 'อุบัติเหตุฉุกเฉิน', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: '1WK0zdp', resId: 'Y5kDjD6', date: '2026-06-09 07:06:59', type: 'ฉีดยา ทำแผล', scores: [5, 4, 4, 5, 5], comment: '' },
+            { id: '4ak0RxO', resId: 'Y5kDjD6', date: '2026-06-09 07:07:24', type: 'ฉีดยา ทำแผล', scores: [4, 5, 4, 5, 5], comment: '' },
+            { id: 'RW4e14l', resId: 'Y5kDjD6', date: '2026-06-09 07:07:44', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
+            { id: 'LDGxjEG', resId: 'Y5kDjD6', date: '2026-06-09 07:13:15', type: 'ฉีดยา ทำแผล', scores: [5, 4, 4, 4, 5], comment: '' },
+            { id: 'Z9VkABo', resId: 'EkMDYW4', date: '2026-06-09 07:15:20', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' }
+        ];
+
+        // Custom Toast System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `flex items-center p-4 rounded-2xl shadow-xl border text-xs font-semibold transform translate-y-2 opacity-0 transition-all duration-300 ${
+                type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-900 dark:text-emerald-300' :
+                type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-900 dark:text-amber-300' :
+                'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950 dark:border-rose-900 dark:text-rose-300'
+            }`;
+
+            const icon = type === 'success' ? 'fa-solid fa-circle-check text-emerald-500' :
+                         type === 'warning' ? 'fa-solid fa-triangle-exclamation text-amber-500' :
+                         'fa-solid fa-circle-xmark text-rose-500';
+
+            toast.innerHTML = `
+                <i class="${icon} text-lg mr-3"></i>
+                <div class="flex-1">${message}</div>
+                <button onclick="this.parentElement.remove()" class="ml-3 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate In
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Auto dismiss after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Live Fetch Google Sheet data using CORS-free JSONP connection (Highly stable)
+        async function fetchGoogleSheetData() {
+            updateSyncStatus('loading', 'กำลังดึงข้อมูล...');
+            let rawInput = document.getElementById('sheet-id-input').value.trim();
+            
+            let sheetId = rawInput;
+            if (rawInput.includes('/d/')) {
+                sheetId = rawInput.split('/d/')[1].split('/')[0];
+            }
+
+            // Remove any previous dynamic script tag to prevent memory leaks
+            const oldScript = document.getElementById('gviz-jsonp-script');
+            if (oldScript) oldScript.remove();
+
+            // Set up globally accessible callback function
+            window.handleGoogleSheetResponse = function(response) {
+                if (jsonpTimeout) clearTimeout(jsonpTimeout);
+                
+                try {
+                    if (!response || response.status === 'error') {
+                        const errMsg = response?.errors?.[0]?.detailed_message || 'เกิดข้อผิดพลาดด้านการประสานสิทธิ์ Google Sheets';
+                        throw new Error(errMsg);
+                    }
+
+                    const table = response.table;
+                    if (!table || !table.rows || table.rows.length === 0) {
+                        throw new Error('ไม่พบข้อมูลประเมินในสเปรดชีตนี้');
+                    }
+
+                    // Map sheet columns
+                    sheetHeadersGlobal = table.cols.map((col, idx) => col.label ? col.label.trim() : `คอลัมน์ ${idx + 1}`);
+                    
+                    // Format for Columns Map option modal compatibility
+                    parsedRawRowsGlobal = [sheetHeadersGlobal];
+                    table.rows.forEach(r => {
+                        if (r && r.c) {
+                            parsedRawRowsGlobal.push(r.c.map(cell => cell ? (cell.f || cell.v || '') : ''));
+                        }
+                    });
+
+                    // Trigger Smart Auto Column Detector
+                    autoDetectColumns(sheetHeadersGlobal, table.rows);
+                    
+                    // Build normalized database
+                    buildDatabaseFromMapping(table.rows);
+                    
+                    updateSyncStatus('success', 'เชื่อมต่อคลาวด์สำเร็จ');
+                    document.getElementById('offline-alert').classList.add('hidden');
+                    showToast('ซิงค์ข้อมูล Google Sheet แบบไร้ CORS เรียบร้อยแล้ว!', 'success');
+
+                } catch (error) {
+                    console.warn('JSONP Parse failed:', error);
+                    loadOfflineBackup();
+                    updateSyncStatus('offline', 'ออฟไลน์ (เชื่อมต่อไม่สำเร็จ)');
+                    document.getElementById('offline-alert').classList.remove('hidden');
+                    showToast(error.message || 'โครงสร้างข้อมูลไม่สมบูรณ์ ดึงข้อมูลจำลองเข้าแทน', 'warning');
+                    applyFilters();
+                }
+            };
+
+            // Inject the script element to run JSONP
+            const script = document.createElement('script');
+            script.id = 'gviz-jsonp-script';
+            script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&headers=1`;
+            
+            // Set safety timer at 6 seconds
+            jsonpTimeout = setTimeout(() => {
+                script.remove();
+                console.warn('Google Sheets JSONP Connection Timed Out.');
+                loadOfflineBackup();
+                updateSyncStatus('offline', 'ออฟไลน์ (หมดเวลาเชื่อมต่อ)');
+                document.getElementById('offline-alert').classList.remove('hidden');
+                showToast('ไม่สามารถเชื่อมต่อ Google Sheets ได้หมดเวลา (กรุณาเปิดสิทธิ์แชร์ทั่วไปในชีต)', 'error');
+                applyFilters();
+            }, 6000);
+
+            // Append to run request
+            document.head.appendChild(script);
+        }
+
+        // Auto format Google GViz date value
+        function formatGvizDate(dateVal) {
+            if (!dateVal) return '';
+            if (dateVal instanceof Date) {
+                const y = dateVal.getFullYear();
+                const m = dateVal.getMonth() + 1;
+                const d = dateVal.getDate();
+                const h = dateVal.getHours();
+                const min = dateVal.getMinutes();
+                const s = dateVal.getSeconds();
+                return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+            return dateVal.toString();
+        }
+
+        // Smart column mapper analyzer
+        function autoDetectColumns(headers, rows) {
+            columnMapping = {
+                date: -1, id: -1, resId: -1, type: -1, comment: -1, scores: []
+            };
+
+            headers.forEach((h, idx) => {
+                const text = h.toLowerCase().trim();
+                
+                // Match patterns for Date
+                if (text.includes('ประทับเวลา') || text.includes('date') || text.includes('time') || text.includes('วัน') || text.includes('เวลา')) {
+                    if (columnMapping.date === -1) columnMapping.date = idx;
+                }
+                // Match patterns for ID
+                else if (text.includes('submission id') || text.includes('รหัส') || text.includes('id')) {
+                    if (text.includes('respondent') || text.includes('ผู้ส่ง') || text.includes('คนไข้')) {
+                        if (columnMapping.resId === -1) columnMapping.resId = idx;
+                    } else {
+                        if (columnMapping.id === -1) columnMapping.id = idx;
+                    }
+                }
+                // Match patterns for Service type
+                else if (text.includes('บริการ') || text.includes('ประเภท') || text.includes('งาน') || text.includes('service') || text.includes('dept') || text.includes('แผนก')) {
+                    if (columnMapping.type === -1) columnMapping.type = idx;
+                }
+                // Match patterns for Comments
+                else if (text.includes('ความเห็น') || text.includes('แนะนำ') || text.includes('comment') || text.includes('เสนอแนะ') || text.includes('ติชม') || text.includes('เพิ่มเติม')) {
+                    if (columnMapping.comment === -1) columnMapping.comment = idx;
+                }
+                // Match patterns for score numbers
+                else if (text.match(/q\d|คะแนน|หัวข้อ|ประเมิน|\d\.|rating/)) {
+                    columnMapping.scores.push(idx);
+                }
+            });
+
+            // Inspect Row 1 for semantic guessing if headers failed to resolve
+            if (rows && rows.length > 0) {
+                const firstRowCells = rows[0].c;
+                if (firstRowCells) {
+                    if (columnMapping.date === -1) {
+                        for(let i=0; i<firstRowCells.length; i++) {
+                            if (firstRowCells[i] && firstRowCells[i].v) {
+                                const valStr = firstRowCells[i].v.toString();
+                                if ((valStr.includes('-') || valStr.includes('/')) && valStr.match(/\d/)) {
+                                    columnMapping.date = i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (columnMapping.scores.length < 5) {
+                        columnMapping.scores = [];
+                        for(let i=0; i<firstRowCells.length; i++) {
+                            if (i === columnMapping.date || i === columnMapping.type || i === columnMapping.comment) continue;
+                            if (firstRowCells[i] && firstRowCells[i].v !== null) {
+                                let num = parseInt(firstRowCells[i].v);
+                                if (!isNaN(num) && num >= 1 && num <= 5) {
+                                    columnMapping.scores.push(i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Defaults fallback
+            if (columnMapping.date === -1) columnMapping.date = 0;
+            if (columnMapping.id === -1) columnMapping.id = 1;
+            if (columnMapping.resId === -1) columnMapping.resId = columnMapping.id;
+            if (columnMapping.type === -1) columnMapping.type = 2;
+            if (columnMapping.comment === -1) columnMapping.comment = headers.length - 1;
+            
+            while(columnMapping.scores.length < 5) {
+                for(let i=0; i<headers.length; i++) {
+                    if (i !== columnMapping.date && i !== columnMapping.type && i !== columnMapping.comment && !columnMapping.scores.includes(i)) {
+                        columnMapping.scores.push(i);
+                        if (columnMapping.scores.length === 5) break;
+                    }
+                }
+                if (columnMapping.scores.length < 5) {
+                    columnMapping.scores.push(0);
+                }
+            }
+            columnMapping.scores = columnMapping.scores.slice(0, 5);
+        }
+
+        // Rebuild activeDatabase with correct mapped columns
+        function buildDatabaseFromMapping(gvizRows = gvizRowsGlobal) {
+            gvizRowsGlobal = gvizRows;
+            activeDatabase = [];
+            
+            gvizRows.forEach((r, rIdx) => {
+                const cells = r.c;
+                if (!cells) return;
+
+                const getVal = (idx) => {
+                    if (idx === -1 || idx >= cells.length || !cells[idx]) return '';
+                    const cell = cells[idx];
+                    if (cell.v === null || cell.v === undefined) return '';
+                    return cell.v;
+                };
+                
+                const getFormattedVal = (idx) => {
+                    if (idx === -1 || idx >= cells.length || !cells[idx]) return '';
+                    const cell = cells[idx];
+                    if (cell.f !== null && cell.f !== undefined) return cell.f;
+                    if (cell.v !== null && cell.v !== undefined) return cell.v;
+                    return '';
+                };
+
+                let parsedScores = columnMapping.scores.map(sIdx => {
+                    let val = getVal(sIdx);
+                    let scoreVal = parseInt(val);
+                    if (isNaN(scoreVal)) {
+                        scoreVal = parseInt(getFormattedVal(sIdx));
+                    }
+                    return isNaN(scoreVal) ? 5 : scoreVal;
+                });
+
+                // Guess service type fallback if empty
+                let parsedType = getFormattedVal(columnMapping.type).toString().trim();
+                if (!parsedType) {
+                    const services = ['ฉีดยา ทำแผล', 'เจ็บป่วยทั่วไป', 'อุบัติเหตุฉุกเฉิน'];
+                    parsedType = services[rIdx % services.length];
+                }
+
+                activeDatabase.push({
+                    id: getFormattedVal(columnMapping.id) || `R-${rIdx + 1}`,
+                    resId: getFormattedVal(columnMapping.resId) || 'Anonymous',
+                    date: formatGvizDate(getVal(columnMapping.date)) || getFormattedVal(columnMapping.date),
+                    type: parsedType,
+                    scores: parsedScores,
+                    comment: getFormattedVal(columnMapping.comment).toString().trim()
+                });
+            });
+
+            applyFilters();
+        }
+
+        // Mapping modal control
+        function openMappingModal() {
+            if (sheetHeadersGlobal.length === 0) {
+                showToast('กรุณาโหลดเชื่อมโยง Google Sheet สำเร็จก่อนตั้งค่าแผนผังคอลัมน์', 'warning');
+                return;
+            }
+
+            // Populate all select options
+            const selects = ['map-date', 'map-type', 'map-comment', 'map-q1', 'map-q2', 'map-q3', 'map-q4', 'map-q5'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '';
+                    sheetHeadersGlobal.forEach((h, idx) => {
+                        select.innerHTML += `<option value="${idx}">${h} (คอลัมน์ ${idx + 1})</option>`;
+                    });
+                }
+            });
+
+            // Set current mappings
+            document.getElementById('map-date').value = columnMapping.date;
+            document.getElementById('map-type').value = columnMapping.type;
+            document.getElementById('map-comment').value = columnMapping.comment;
+            document.getElementById('map-q1').value = columnMapping.scores[0];
+            document.getElementById('map-q2').value = columnMapping.scores[1];
+            document.getElementById('map-q3').value = columnMapping.scores[2];
+            document.getElementById('map-q4').value = columnMapping.scores[3];
+            document.getElementById('map-q5').value = columnMapping.scores[4];
+
+            document.getElementById('mapping-modal').classList.remove('hidden');
+        }
+
+        function closeMappingModal() {
+            document.getElementById('mapping-modal').classList.add('hidden');
+        }
+
+        function saveAndApplyMapping() {
+            columnMapping.date = parseInt(document.getElementById('map-date').value);
+            columnMapping.type = parseInt(document.getElementById('map-type').value);
+            columnMapping.comment = parseInt(document.getElementById('map-comment').value);
+            columnMapping.scores[0] = parseInt(document.getElementById('map-q1').value);
+            columnMapping.scores[1] = parseInt(document.getElementById('map-q2').value);
+            columnMapping.scores[2] = parseInt(document.getElementById('map-q3').value);
+            columnMapping.scores[3] = parseInt(document.getElementById('map-q4').value);
+            columnMapping.scores[4] = parseInt(document.getElementById('map-q5').value);
+
+            closeMappingModal();
+            buildDatabaseFromMapping();
+            showToast('ปรับใช้แผนผังคอลัมน์กำหนดเองเรียบร้อย!', 'success');
+        }
+
+        // Fallback offline loader
+        function loadOfflineBackup() {
+            activeDatabase = [];
+            let recordCount = 0;
+            let currentYear = 2023;
+            let currentMonth = 10;
+            let currentDay = 11;
+            let hour = 3;
+            let min = 48;
+            let sec = 47;
+
+            while (activeDatabase.length < 131) {
+                let patternIdx = recordCount % backupPatterns.length;
+                let pattern = backupPatterns[patternIdx];
+                
+                let dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+                
+                activeDatabase.push({
+                    id: pattern.id,
+                    resId: pattern.resId,
+                    date: dateStr,
+                    type: pattern.type,
+                    scores: [...pattern.scores],
+                    comment: ''
+                });
+
+                recordCount++;
+                currentDay += 2;
+                if (currentDay > 28) {
+                    currentDay = 1;
+                    currentMonth += 1;
+                    if (currentMonth > 12) {
+                        currentMonth = 1;
+                        currentYear += 1;
+                    }
+                }
+            }
+
+            activeDatabase = [...activeDatabase, ...specificBackupRecords].slice(0, 150);
+        }
+
+        function updateSyncStatus(status, text) {
+            const badge = document.getElementById('sync-status-badge');
+            const statusTxt = document.getElementById('sync-status-text');
+            if(!badge) return;
+
+            statusTxt.innerText = text;
+
+            if (status === 'loading') {
+                badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-yellow-500/15 text-yellow-300 border border-yellow-500/30";
+            } else if (status === 'success') {
+                badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+            } else {
+                badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30";
+            }
+        }
+
+        // Apply filters & Redraw All Elements
+        function applyFilters() {
+            const serviceFilter = document.getElementById('filter-service').value;
+            const timeframeFilter = document.getElementById('filter-timeframe').value;
+            const ratingFilter = document.getElementById('filter-rating').value;
+            const searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+
+            filteredData = activeDatabase.filter(row => {
+                if (serviceFilter !== 'all' && row.type !== serviceFilter) return false;
+
+                if (timeframeFilter !== 'all') {
+                    const rowYear = row.date.substring(0, 4);
+                    if (rowYear !== timeframeFilter) return false;
+                }
+
+                const rowAvg = row.scores.reduce((a, b) => a + b, 0) / row.scores.length;
+
+                if (ratingFilter !== 'all') {
+                    if (ratingFilter === 'high' && rowAvg < 4.0) return false;
+                    if (ratingFilter === 'medium' && (rowAvg < 3.0 || rowAvg >= 4.0)) return false;
+                    if (ratingFilter === 'low' && rowAvg >= 3.0) return false;
+                }
+
+                if (searchQuery !== '') {
+                    const matchesId = row.id.toLowerCase().includes(searchQuery);
+                    const matchesResId = row.resId.toLowerCase().includes(searchQuery);
+                    const matchesComment = row.comment.toLowerCase().includes(searchQuery);
+                    const matchesType = row.type.toLowerCase().includes(searchQuery);
+                    if (!matchesId && !matchesResId && !matchesComment && !matchesType) return false;
+                }
+
+                return true;
+            });
+
+            document.getElementById('filtered-count').innerText = `${filteredData.length} รายการ`;
+            if (document.getElementById('count-filtered-txt')) {
+                document.getElementById('count-filtered-txt').innerText = `${filteredData.length} รายการ`;
+            }
+
+            updateKPIs();
+            renderCharts();
+            renderFeedbackList();
+            renderMatrix();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-service').value = 'all';
+            document.getElementById('filter-timeframe').value = 'all';
+            document.getElementById('filter-rating').value = 'all';
+            document.getElementById('search-input').value = '';
+            applyFilters();
+        }
+
+        // Tab Switch logic
+        function switchTab(tabId) {
+            currentTab = tabId;
+            
+            document.getElementById('tab-content-overview').classList.add('hidden');
+            document.getElementById('tab-content-analysis').classList.add('hidden');
+            document.getElementById('tab-content-feedback').classList.add('hidden');
+            document.getElementById('tab-content-insights').classList.add('hidden');
+
+            const navIds = ['nav-overview', 'nav-analysis', 'nav-feedback', 'nav-insights'];
+            navIds.forEach(id => {
+                const element = document.getElementById(id);
+                element.className = "flex items-center px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all duration-150";
+            });
+
+            document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).className = "flex items-center px-4 py-3 text-sm font-medium rounded-xl bg-teal-800 text-white transition-all duration-150";
+
+            document.getElementById('mobile-tab-select').value = tabId;
+
+            const titles = {
+                overview: 'แดชบอร์ดสรุปผลความพึงพอใจภาพรวม',
+                analysis: 'การวิเคราะห์เปรียบเทียบเชิงลึกรายบริการ',
+                feedback: 'ตารางบันทึกความคิดเห็นแบบสอบถามทั้งหมด',
+                insights: 'ข้อเสนอแนะและแผนกลยุทธ์ปรับปรุงคุณภาพโรงพยาบาล'
+            };
+            document.getElementById('tab-title').innerText = titles[tabId];
+
+            if (tabId === 'overview') {
+                renderCharts();
+            } else if (tabId === 'analysis') {
+                renderMatrix();
+            }
+        }
+
+        // Theme Toggle: Light vs Dark mode
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+            const filterSec = document.getElementById('filter-section');
+            const scrollable = document.getElementById('dashboard-scrollable');
+            const themeIcons = [document.getElementById('theme-icon'), document.getElementById('theme-icon-mobile')];
+
+            if (isDarkMode) {
+                body.classList.add('dark', 'bg-slate-900', 'text-slate-100');
+                body.classList.remove('bg-slate-50', 'text-slate-800');
+                filterSec.classList.add('bg-slate-850', 'border-slate-800');
+                filterSec.classList.remove('bg-white', 'border-slate-200');
+                scrollable.classList.add('bg-slate-900');
+                
+                themeIcons.forEach(icon => { if (icon) icon.className = "fa-solid fa-sun text-yellow-400"; });
+
+                const whiteBgElements = document.querySelectorAll('.bg-white');
+                whiteBgElements.forEach(el => {
+                    el.classList.add('bg-slate-800', 'border-slate-700', 'text-white');
+                    el.classList.remove('bg-white', 'border-slate-200', 'text-slate-800');
+                });
+            } else {
+                body.classList.remove('dark', 'bg-slate-900', 'text-slate-100');
+                body.classList.add('bg-slate-50', 'text-slate-800');
+                filterSec.classList.add('bg-white', 'border-slate-200');
+                filterSec.classList.remove('bg-slate-850', 'border-slate-800');
+                scrollable.classList.remove('bg-slate-900');
+                
+                themeIcons.forEach(icon => { if (icon) icon.className = "fa-solid fa-moon text-teal-400"; });
+
+                const darkBgElements = document.querySelectorAll('.bg-slate-800');
+                darkBgElements.forEach(el => {
+                    el.classList.add('bg-white', 'border-slate-200', 'text-slate-800');
+                    el.classList.remove('bg-slate-800', 'border-slate-700', 'text-white');
+                });
+            }
+
+            renderCharts();
+        }
+
+        // Calculate KPIs from filtered dataset
+        function updateKPIs() {
+            const total = filteredData.length;
+            document.getElementById('kpi-total').innerText = total;
+
+            if (total === 0) {
+                document.getElementById('kpi-avg').innerText = '0.00';
+                document.getElementById('kpi-csat').innerText = '0%';
+                document.getElementById('kpi-complaint').innerText = '0%';
+                return;
+            }
+
+            let totalScoresSum = 0;
+            let satisfiedCount = 0;
+            let complaintCount = 0;
+
+            filteredData.forEach(row => {
+                const rowAvg = row.scores.reduce((a,b)=>a+b, 0) / row.scores.length;
+                totalScoresSum += rowAvg;
+
+                if (rowAvg >= 4.0) {
+                    satisfiedCount++;
+                }
+
+                const hasCriticalComment = row.comment.includes('ช้า') || row.comment.includes('รอ') || row.comment.includes('ลาออก') || row.scores.some(s => s <= 2);
+                if (rowAvg < 3.0 || hasCriticalComment) {
+                    complaintCount++;
+                }
+            });
+
+            const overallAvg = totalScoresSum / total;
+            const csatRate = (satisfiedCount / total) * 100;
+            const complaintRate = (complaintCount / total) * 100;
+
+            document.getElementById('kpi-avg').innerHTML = `${overallAvg.toFixed(2)} <span class="text-xs font-normal text-slate-400">/ 5.0</span>`;
+            document.getElementById('kpi-csat').innerText = `${csatRate.toFixed(1)}%`;
+            document.getElementById('kpi-complaint').innerText = `${complaintRate.toFixed(1)}%`;
+
+            // Draw Stars
+            const starContainer = document.getElementById('kpi-stars');
+            starContainer.innerHTML = '';
+            const fullStars = Math.floor(overallAvg);
+            const hasHalf = overallAvg % 1 >= 0.5;
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    starContainer.innerHTML += '<i class="fa-solid fa-star"></i>';
+                } else if (i === fullStars && hasHalf) {
+                    starContainer.innerHTML += '<i class="fa-solid fa-star-half-stroke"></i>';
+                } else {
+                    starContainer.innerHTML += '<i class="fa-regular fa-star"></i>';
+                }
+            }
+        }
+
+        // Deep Analysis Matrix render
+        function renderMatrix() {
+            const matrixBody = document.getElementById('matrix-tbody');
+            if (!matrixBody) return;
+
+            const serviceCategories = ['ฉีดยา ทำแผล', 'เจ็บป่วยทั่วไป', 'อุบัติเหตุฉุกเฉิน'];
+            let html = '';
+
+            let dressingAvg = 0, generalAvg = 0, emergencyAvg = 0;
+
+            serviceCategories.forEach(cat => {
+                const catRows = activeDatabase.filter(r => r.type === cat);
+                if (catRows.length === 0) return;
+
+                let sums = [0, 0, 0, 0, 0];
+                catRows.forEach(row => {
+                    for (let i = 0; i < 5; i++) {
+                        sums[i] += row.scores[i];
+                    }
+                });
+
+                const avgs = sums.map(sum => (sum / catRows.length));
+                const catAvgOverall = avgs.reduce((a,b)=>a+b, 0) / 5;
+
+                if (cat === 'ฉีดยา ทำแผล') dressingAvg = catAvgOverall;
+                else if (cat === 'เจ็บป่วยทั่วไป') generalAvg = catAvgOverall;
+                else if (cat === 'อุบัติเหตุฉุกเฉิน') emergencyAvg = catAvgOverall;
+
+                const getBgClass = (val) => {
+                    if (val < 3.5) return 'bg-red-50 text-red-700';
+                    if (val <= 4.2) return 'bg-amber-50 text-amber-700';
+                    return 'bg-emerald-50 text-emerald-700';
+                };
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-4 px-4 font-bold text-slate-800">${cat}</td>
+                        <td class="py-4 px-4 text-center ${getBgClass(avgs[0])} font-semibold">${avgs[0].toFixed(2)}</td>
+                        <td class="py-4 px-4 text-center ${getBgClass(avgs[1])} font-semibold">${avgs[1].toFixed(2)}</td>
+                        <td class="py-4 px-4 text-center ${getBgClass(avgs[2])} font-semibold">${avgs[2].toFixed(2)}</td>
+                        <td class="py-4 px-4 text-center ${getBgClass(avgs[3])} font-semibold">${avgs[3].toFixed(2)}</td>
+                        <td class="py-4 px-4 text-center ${getBgClass(avgs[4])} font-semibold">${avgs[4].toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            matrixBody.innerHTML = html;
+
+            updateProgressBar('compare-dressing', dressingAvg);
+            updateProgressBar('compare-general', generalAvg);
+            updateProgressBar('compare-emergency', emergencyAvg);
+        }
+
+        function updateProgressBar(idPrefix, val) {
+            const label = document.getElementById(`${idPrefix}-val`);
+            const bar = document.getElementById(`${idPrefix}-bar`);
+            if (label && bar) {
+                label.innerText = `${val.toFixed(2)} / 5.0`;
+                bar.style.width = `${(val / 5) * 100}%`;
+            }
+        }
+
+        // Render Feedback Page
+        function renderFeedbackList() {
+            const tbody = document.getElementById('feedback-tbody');
+            const emptyState = document.getElementById('feedback-empty');
+            
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let cComplaint = 0;
+            let cPositive = 0;
+            let cNone = 0;
+
+            filteredData.forEach(r => {
+                if (r.comment === '') {
+                    cNone++;
+                } else {
+                    const rowAvg = r.scores.reduce((a,b)=>a+b, 0) / r.scores.length;
+                    if (rowAvg < 3.5 || r.comment.includes('ช้า') || r.comment.includes('รอ') || r.comment.includes('สาย')) {
+                        cComplaint++;
+                    } else {
+                        cPositive++;
+                    }
+                }
+            });
+
+            document.getElementById('count-complaint-txt').innerText = `${cComplaint} รายการ`;
+            document.getElementById('count-pos-txt').innerText = `${cPositive} รายการ`;
+            document.getElementById('count-none-txt').innerText = `${cNone} รายการ`;
+
+            if (filteredData.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filteredData.forEach(row => {
+                const rowAvg = (row.scores.reduce((a,b)=>a+b,0) / row.scores.length).toFixed(2);
+                let badge = '';
+                let textComment = row.comment;
+
+                if (row.comment === '') {
+                    badge = `<span class="bg-slate-100 text-slate-500 text-[10px] font-semibold px-2 py-1 rounded-md">ไม่มีบันทึก</span>`;
+                    textComment = `<span class="text-slate-300 italic font-normal">ไม่ได้ระบุข้อเสนอแนะเพิ่มเติม</span>`;
+                } else {
+                    if (rowAvg < 3.5 || row.comment.includes('ช้า') || row.comment.includes('รอ') || row.comment.includes('ลาออก')) {
+                        badge = `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ร้องเรียน / ปรับปรุง</span>`;
+                    } else {
+                        badge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-circle-check mr-1"></i>คำชมเชย / เชิงบวก</span>`;
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                        <td class="py-4 px-4 whitespace-nowrap text-xs text-slate-500">${row.date}</td>
+                        <td class="py-4 px-4 font-mono font-bold text-teal-600">${row.id}</td>
+                        <td class="py-4 px-4 text-xs font-semibold text-slate-600">${row.type}</td>
+                        <td class="py-4 px-4 text-center font-bold text-slate-800">${rowAvg} <span class="text-[10px] text-slate-400 font-normal">/ 5</span></td>
+                        <td class="py-4 px-4">${badge}</td>
+                        <td class="py-4 px-4 text-xs text-slate-700 font-normal select-text">${textComment}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Charts using Chart.js
+        function renderCharts() {
+            const gridTextColor = isDarkMode ? '#cbd5e1' : '#475569';
+            const gridBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
+
+            let topicSums = [0, 0, 0, 0, 0];
+            filteredData.forEach(row => {
+                for (let i = 0; i < 5; i++) {
+                    topicSums[i] += row.scores[i];
+                }
+            });
+            const topicAverages = filteredData.length > 0 ? topicSums.map(sum => (sum / filteredData.length).toFixed(2)) : [0,0,0,0,0];
+
+            // 1. Bar Chart: Topics
+            if (chartTopicsInstance) chartTopicsInstance.destroy();
+            const ctxTopics = document.getElementById('chart-topics');
+            if (ctxTopics) {
+                chartTopicsInstance = new Chart(ctxTopics.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: [
+                            '1. สุภาพ กิริยามารยาท',
+                            '2. แต่งกายสุภาพเรียบร้อย',
+                            '3. เอาใจใส่ กระตือรือร้น',
+                            '4. ความรู้ความสามารถ',
+                            '5. ให้บริการเท่าเทียม'
+                        ],
+                        datasets: [{
+                            label: 'คะแนนประเมินเฉลี่ย',
+                            data: topicAverages,
+                            backgroundColor: [
+                                'rgba(20, 184, 166, 0.85)',
+                                'rgba(99, 102, 241, 0.85)',
+                                'rgba(245, 158, 11, 0.85)',
+                                'rgba(16, 185, 129, 0.85)',
+                                'rgba(239, 68, 68, 0.85)'
+                            ],
+                            borderColor: [
+                                '#14b8a6', '#6366f1', '#f59e0b', '#10b981', '#ef4444'
+                            ],
+                            borderWidth: 1.5,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                padding: 12,
+                                bodyFont: { family: 'Sarabun' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 1,
+                                max: 5,
+                                grid: { color: gridBorderColor },
+                                ticks: { color: gridTextColor, stepSize: 1, font: { family: 'Sarabun' } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: gridTextColor, font: { family: 'Sarabun', size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Doughnut Chart: Service Types
+            let dressingCount = 0;
+            let generalCount = 0;
+            let emergencyCount = 0;
+            filteredData.forEach(row => {
+                if (row.type === 'ฉีดยา ทำแผล') dressingCount++;
+                else if (row.type === 'เจ็บป่วยทั่วไป') generalCount++;
+                else if (row.type === 'อุบัติเหตุฉุกเฉิน') emergencyCount++;
+            });
+
+            if (chartDistInstance) chartDistInstance.destroy();
+            const ctxDist = document.getElementById('chart-distribution');
+            if (ctxDist) {
+                chartDistInstance = new Chart(ctxDist.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ฉีดยา ทำแผล', 'เจ็บป่วยทั่วไป', 'อุบัติเหตุฉุกเฉิน'],
+                        datasets: [{
+                            data: [dressingCount, generalCount, emergencyCount],
+                            backgroundColor: [
+                                'rgba(20, 184, 166, 0.85)',
+                                'rgba(99, 102, 241, 0.85)',
+                                'rgba(244, 63, 94, 0.85)'
+                            ],
+                            borderWidth: 2,
+                            borderColor: isDarkMode ? '#1e293b' : '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: gridTextColor, font: { family: 'Sarabun', size: 11 } }
+                            },
+                            tooltip: { bodyFont: { family: 'Sarabun' } }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            // 3. Line Chart: Trend over time
+            let timelineMap = {};
+            filteredData.forEach(row => {
+                const year = row.date.substring(0, 4);
+                let monthStr = row.date.substring(5, 7);
+                let month = parseInt(monthStr);
+                if (isNaN(month)) month = 6;
+                
+                let period = '';
+                if (month <= 3) period = `${year}-Q1`;
+                else if (month <= 6) period = `${year}-Q2`;
+                else if (month <= 9) period = `${year}-Q3`;
+                else period = `${year}-Q4`;
+
+                if (!timelineMap[period]) {
+                    timelineMap[period] = { sum: 0, count: 0 };
+                }
+                const rowAvg = row.scores.reduce((a,b)=>a+b, 0) / row.scores.length;
+                timelineMap[period].sum += rowAvg;
+                timelineMap[period].count++;
+            });
+
+            const sortedPeriods = Object.keys(timelineMap).sort();
+            const trendLabels = sortedPeriods;
+            const trendScores = sortedPeriods.map(p => (timelineMap[p].sum / timelineMap[p].count).toFixed(2));
+
+            if (chartTrendInstance) chartTrendInstance.destroy();
+            const ctxTrend = document.getElementById('chart-trend');
+            if (ctxTrend) {
+                chartTrendInstance = new Chart(ctxTrend.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: trendLabels.length > 0 ? trendLabels : ['ไม่มีข้อมูล'],
+                        datasets: [{
+                            label: 'คะแนนเฉลี่ย',
+                            data: trendScores.length > 0 ? trendScores : [0],
+                            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                            borderColor: '#0d9488',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#0d9488'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { bodyFont: { family: 'Sarabun' } }
+                        },
+                        scales: {
+                            y: {
+                                min: 1,
+                                max: 5,
+                                grid: { color: gridBorderColor },
+                                ticks: { color: gridTextColor, font: { family: 'Sarabun' } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: gridTextColor, font: { family: 'Sarabun' } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 4. Star Ratings Frequency Chart
+            let starsCounts = [0, 0, 0, 0, 0];
+            filteredData.forEach(row => {
+                row.scores.forEach(s => {
+                    let index = Math.round(s) - 1;
+                    if (index >= 0 && index < 5) {
+                        starsCounts[index]++;
+                    }
+                });
+            });
+
+            if (chartStarsInstance) chartStarsInstance.destroy();
+            const ctxStars = document.getElementById('chart-stars-breakdown');
+            if (ctxStars) {
+                chartStarsInstance = new Chart(ctxStars.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['1 ดาว', '2 ดาว', '3 ดาว', '4 ดาว', '5 ดาว'],
+                        datasets: [{
+                            data: starsCounts,
+                            backgroundColor: [
+                                'rgba(239, 68, 68, 0.75)',
+                                'rgba(249, 115, 22, 0.75)',
+                                'rgba(245, 158, 11, 0.75)',
+                                'rgba(16, 185, 129, 0.75)',
+                                'rgba(45, 212, 191, 0.75)'
+                            ],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { bodyFont: { family: 'Sarabun' } }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: gridBorderColor },
+                                ticks: { color: gridTextColor, font: { family: 'Sarabun' } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: gridTextColor, font: { family: 'Sarabun' } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function showInstructions() {
+            document.getElementById('instruction-modal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instruction-modal').classList.add('hidden');
+        }
+
+        // Export active database to CSV
+        function exportCSV() {
+            if (filteredData.length === 0) {
+                showToast("ไม่มีข้อมูลที่จะส่งออก!", "warning");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Submission ID,Respondent ID,Submitted at,Service Type,Q1,Q2,Q3,Q4,Q5,Comment\r\n";
+
+            filteredData.forEach(row => {
+                const qValues = row.scores.join(",");
+                const cleanComment = row.comment.replace(/"/g, '""');
+                csvContent += `${row.id},${row.resId},"${row.date}","${row.type}",${qValues},"${cleanComment}"\r\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Hospital_Satisfaction_Live_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("ส่งออกไฟล์รายงาน CSV สำเร็จ!", "success");
+        }
+    </script>
+</body>
+</html>
