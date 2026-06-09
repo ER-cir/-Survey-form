@@ -55,6 +55,16 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        @media print {
+            aside, #filter-section button, #toast-container, #pagination-controls, .export-btn, #open-sheet-link-container { display: none !important; }
+            body, html { overflow: visible !important; height: auto !important; }
+            .flex.h-screen { display: block !important; height: auto !important; }
+            main { overflow: visible !important; }
+            #dashboard-scrollable { overflow: visible !important; height: auto !important; }
+            .bg-white { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            canvas { max-height: 260px !important; }
+        }
     </style>
 </head>
 <body class="h-full overflow-hidden text-slate-800 transition-colors duration-200">
@@ -103,9 +113,9 @@
 
                     <div class="px-3">
                         <label class="text-[10px] text-teal-300 font-semibold block mb-1">ID แผ่นงาน (Spreadsheet ID)</label>
-                        <input type="text" id="sheet-id-input" value="1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo" 
+                        <input type="text" id="sheet-id-input" value="" 
                                class="w-full text-xs bg-brand-950 border border-brand-700 text-white rounded-lg px-2.5 py-2 focus:ring-1 focus:ring-teal-400 focus:outline-none"
-                               placeholder="กรอก Spreadsheet ID...">
+                               placeholder="วาง Spreadsheet ID หรือ URL...">
                     </div>
 
                     <div class="px-3 flex flex-col gap-2">
@@ -123,8 +133,8 @@
                     </div>
                 </div>
 
-                <div class="pt-4 mt-2">
-                    <a href="https://docs.google.com/spreadsheets/d/1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo/edit?usp=sharing" target="_blank" class="flex items-center px-4 py-2 text-xs text-teal-200 hover:text-white hover:underline">
+                <div class="pt-4 mt-2" id="open-sheet-link-container" style="display:none;">
+                    <a id="open-sheet-link" href="#" target="_blank" class="flex items-center px-4 py-2 text-xs text-teal-200 hover:text-white hover:underline">
                         <i class="fa-solid fa-file-excel mr-2 text-green-400"></i>
                         เปิดดูไฟล์ Google Sheet
                     </a>
@@ -152,21 +162,43 @@
             <!-- Mobile header -->
             <header class="flex md:hidden items-center justify-between h-16 px-4 bg-brand-900 text-white flex-shrink-0">
                 <div class="flex items-center">
+                    <button onclick="toggleMobileMenu()" class="text-teal-400 hover:text-white p-2 mr-2" id="mobile-menu-btn" title="เมนู">
+                        <i class="fa-solid fa-bars text-xl" id="mobile-menu-icon"></i>
+                    </button>
                     <i class="fa-solid fa-square-poll-vertical text-teal-400 text-2xl mr-2"></i>
                     <span class="text-md font-bold">Hosp-Satisfaction</span>
                 </div>
-                <div class="flex items-center space-y-0 space-x-2">
+                <div class="flex items-center space-x-2">
                     <button onclick="toggleDarkMode()" class="text-teal-400 hover:text-white p-2">
                         <i id="theme-icon-mobile" class="fa-solid fa-moon"></i>
                     </button>
-                    <select id="mobile-tab-select" onchange="switchTab(this.value)" class="bg-brand-850 text-white text-xs border border-brand-700 rounded-lg px-2 py-1 focus:ring-1 focus:ring-teal-400">
-                        <option value="overview">ภาพรวมประเมิน</option>
-                        <option value="analysis">วิเคราะห์เชิงลึก</option>
-                        <option value="feedback">ความคิดเห็นผู้รับบริการ</option>
-                        <option value="insights">ข้อแนะนำเชิงกลยุทธ์</option>
-                    </select>
                 </div>
             </header>
+
+            <!-- Mobile Slide-out Nav -->
+            <div id="mobile-nav-panel" class="hidden md:hidden fixed inset-0 z-40 flex">
+                <div class="w-64 bg-brand-900 text-white flex flex-col shadow-2xl h-full overflow-y-auto">
+                    <div class="flex items-center justify-between h-16 px-4 bg-brand-950 border-b border-brand-800">
+                        <span class="text-base font-bold text-white">เมนูหลัก</span>
+                        <button onclick="toggleMobileMenu()" class="text-teal-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    <div class="flex-1 p-4 space-y-1">
+                        <button onclick="switchTab('overview');toggleMobileMenu()" class="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all">
+                            <i class="fa-solid fa-chart-pie w-5 text-teal-300 mr-3"></i> ภาพรวมผลประเมิน
+                        </button>
+                        <button onclick="switchTab('analysis');toggleMobileMenu()" class="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all">
+                            <i class="fa-solid fa-magnifying-glass-chart w-5 text-teal-400 mr-3"></i> วิเคราะห์เจาะลึกบริการ
+                        </button>
+                        <button onclick="switchTab('feedback');toggleMobileMenu()" class="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all">
+                            <i class="fa-solid fa-comments w-5 text-teal-400 mr-3"></i> ความคิดเห็นผู้รับบริการ
+                        </button>
+                        <button onclick="switchTab('insights');toggleMobileMenu()" class="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl text-teal-100 hover:bg-brand-800 hover:text-white transition-all">
+                            <i class="fa-solid fa-lightbulb w-5 text-teal-400 mr-3"></i> ข้อแนะนำเชิงกลยุทธ์
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-slate-900/50 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
+            </div>
 
             <!-- Secondary Top Bar: Filter Panel -->
             <section class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0 shadow-sm transition-colors duration-200" id="filter-section">
@@ -186,9 +218,6 @@
                             <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ประเภทการรับบริการ</label>
                             <select id="filter-service" onchange="applyFilters()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
                                 <option value="all">บริการทั้งหมด (All Services)</option>
-                                <option value="ฉีดยา ทำแผล">ฉีดยา ทำแผล</option>
-                                <option value="เจ็บป่วยทั่วไป">เจ็บป่วยทั่วไป</option>
-                                <option value="อุบัติเหตุฉุกเฉิน">อุบัติเหตุฉุกเฉิน</option>
                             </select>
                         </div>
 
@@ -196,11 +225,7 @@
                         <div class="flex flex-col">
                             <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่วงปีประเมิน</label>
                             <select id="filter-timeframe" onchange="applyFilters()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
-                                <option value="all">ทุกช่วงเวลา (2023 - 2026)</option>
-                                <option value="2023">ปี 2023</option>
-                                <option value="2024">ปี 2024</option>
-                                <option value="2025">ปี 2025</option>
-                                <option value="2026">ปี 2026</option>
+                                <option value="all">ทุกช่วงเวลา</option>
                             </select>
                         </div>
 
@@ -221,6 +246,20 @@
                                 <i class="fa-solid fa-filter-circle-xmark mr-1.5"></i> ล้างตัวกรอง
                             </button>
                         </div>
+
+                        <!-- Auto-refresh toggle -->
+                        <div class="flex flex-col justify-end pt-5">
+                            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center transition-all duration-150 border border-slate-200" title="รีเฟรชข้อมูลอัตโนมัติทุก 5 นาที">
+                                <i class="fa-solid fa-rotate mr-1.5" id="auto-refresh-icon"></i> <span id="auto-refresh-label">Auto Refresh</span>
+                            </button>
+                        </div>
+
+                        <!-- Print / PDF -->
+                        <div class="flex flex-col justify-end pt-5">
+                            <button onclick="window.print()" class="bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center transition-all duration-150 border border-slate-200" title="พิมพ์รายงาน / บันทึก PDF">
+                                <i class="fa-solid fa-print mr-1.5"></i> พิมพ์ / PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -238,14 +277,14 @@
                 </div>
 
                 <!-- 4 KPI SUMMARY CARDS -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpi-panel">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="kpi-panel">
                     <!-- Total Respondents -->
                     <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
                         <div>
                             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">จำนวนผู้ประเมินรวม</p>
                             <h3 class="text-3xl font-extrabold text-slate-800 mt-2" id="kpi-total">0</h3>
-                            <p class="text-[11px] text-emerald-600 mt-1 font-semibold flex items-center">
-                                <i class="fa-solid fa-check-circle mr-1"></i> เชื่อมโยงระบบคลาวด์สำเร็จ
+                            <p class="text-[11px] mt-1 font-semibold flex items-center" id="kpi-connect-status">
+                                <i class="fa-solid fa-spinner animate-spin mr-1"></i> กำลังโหลด...
                             </p>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
@@ -294,6 +333,18 @@
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
                             <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- NPS Score -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">NPS Score</p>
+                            <h3 class="text-3xl font-extrabold text-indigo-600 mt-2" id="kpi-nps">0</h3>
+                            <p class="text-[11px] text-slate-500 mt-1">Promoters(5★) − Detractors(1-2★)</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-arrow-trend-up text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -506,7 +557,7 @@
                             <div class="flex flex-wrap items-center gap-3">
                                 <!-- Search bar -->
                                 <div class="relative">
-                                    <input type="text" id="search-input" onkeyup="applyFilters()" placeholder="ค้นหาตามข้อความ/ไอดี..." class="text-xs border border-slate-300 rounded-lg pl-8 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                                    <input type="text" id="search-input" onkeyup="debounceSearch()" placeholder="ค้นหาตามข้อความ/ไอดี..." class="text-xs border border-slate-300 rounded-lg pl-8 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
                                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                                 </div>
                                 <!-- Download CSV button -->
@@ -559,6 +610,20 @@
                         <div id="feedback-empty" class="hidden py-12 text-center text-slate-400">
                             <i class="fa-solid fa-comment-slash text-4xl mb-3 block"></i>
                             <p class="text-sm font-semibold">ไม่พบความเห็นตามตัวเลือกหรือตัวกรองที่เลือกไว้</p>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div id="pagination-controls" class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-xs text-slate-400" id="pagination-info">แสดง 0 - 0 จาก 0 รายการ</p>
+                            <div class="flex items-center gap-2">
+                                <button onclick="changePage(-1)" id="btn-prev" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                                    <i class="fa-solid fa-chevron-left mr-1"></i> ก่อนหน้า
+                                </button>
+                                <span id="pagination-page" class="text-xs font-semibold text-slate-700 px-2">หน้า 1</span>
+                                <button onclick="changePage(1)" id="btn-next" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                                    ถัดไป <i class="fa-solid fa-chevron-right ml-1"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -684,7 +749,7 @@
                 <p>แดชบอร์ดนี้เชื่อมต่อข้อมูลผ่าน Google Visualization API (JSONP) จำเป็นต้องตั้งค่าความปลอดภัยของเอกสารใหู่อยู่ในกลุ่ม "คนที่มีลิงก์มีสิทธิ์ดู" จึงจะสามารถซิงค์ข้อมูลได้สำเร็จโดยไม่มีปัญหา CORS:</p>
                 
                 <ol class="list-decimal pl-4 space-y-2">
-                    <li>เปิดหน้าชีต <a href="https://docs.google.com/spreadsheets/d/1k1N9kTjxgaADDdVL7uoXcsYrGgaSO3gRpqwBQN0Y8Oo/edit?usp=sharing" target="_blank" class="text-teal-600 underline font-bold">Google Sheets ที่คุณกำลังใช้งานอยู่</a></li>
+                    <li>เปิดหน้าชีต Google Sheets ที่คุณกำลังใช้งานอยู่</li>
                     <li>กดปุ่ม <span class="bg-teal-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">แชร์ (Share)</span> บริเวณมุมขวาบน</li>
                     <li>ที่หัวข้อ <strong>"การเข้าถึงทั่วไป" (General Access)</strong> ให้เปลี่ยนจาก <strong>"จำกัด" (Restricted)</strong> เป็น <strong>"ทุกคนที่มีลิงก์" (Anyone with the link)</strong></li>
                     <li>ตั้งระดับสิทธิ์ด้านขวามือให้เป็น <strong>"ผู้มีสิทธิ์อ่าน" (Viewer)</strong> เท่านั้น</li>
@@ -778,6 +843,17 @@
         let gvizRowsGlobal = [];      // Stores original gviz rows format for remap triggers
         let jsonpTimeout = null;      // Stores active timeout tracker
 
+        // Pagination
+        let currentPage = 1;
+        const PAGE_SIZE = 20;
+
+        // Auto-refresh
+        let autoRefreshInterval = null;
+        let autoRefreshOn = false;
+
+        // Search debounce
+        let searchDebounceTimer = null;
+
         // Column mapping configurations
         let columnMapping = {
             date: -1,
@@ -819,8 +895,8 @@
             { id: 'jaeyBdQ', resId: '8VeE5l', date: '2025-04-05 12:30:05', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 4, 3, 3, 3], comment: '6โมงเย็นขึ้นไป บรีการช้ามาก ต้องรอแพทย์เข้าซึ่งแพทย์มาตรวจช้ามาก' },
             { id: 'J9dBDxz', resId: 'OZW9x7', date: '2025-04-28 07:20:24', type: 'ฉีดยา ทำแผล', scores: [5, 5, 5, 5, 5], comment: '' },
             { id: 'lbla7bo', resId: 'G8ypVO', date: '2025-08-10 03:40:01', type: 'ฉีดยา ทำแผล', scores: [3, 4, 2, 3, 3], comment: 'ขอไห้พนักงานบริการไห้เร็วหน่อยคับ ล้างแผลต้องรอเกือบ2ชั่วโมง ถ้าผมไห้คะแนแค่2เองคับ' },
-            { id: 'aQaLyZB', resId: '9qqJLRV', date: '2025-09-26 12:14:37', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 4, 2, 4, 3], comment: 'แนะนำหมอใหญ่ให้เข้าเวรตรงต่อเวลาด้วยไม่ใช้ให้คนใช้ รอ วันนี้มีเคสคนโดนงูกัดด้วยแต่ต้องรอหมอเกือบชม. ถ้าม่มีความรับผิดชอบก็ลาออกเถอะครับสงสารคนใข กูมารอหมอเป็นชม.เคสวันนี้26/9/68 รพเจาะไอร้องทีมีหมอใหญ่หวยที่สุด..' },
-            { id: '68pgeqY', resId: '8VeE5l', date: '2025-09-26 13:38:16', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 3, 3, 3, 3], comment: 'ฝากผู้ดูแล้ด้วยถ้าหมอใหญ่ม่ยากทำงานก็ควรลาออก กูมาจังแต่17:00 จนถึง21แล้ยังม่เสร็จเหี้ยอัไรเลย' },
+            { id: 'aQaLyZB', resId: '9qqJLRV', date: '2025-09-26 12:14:37', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 4, 2, 4, 3], comment: 'แนะนำหมอใหญ่ให้เข้าเวรตรงต่อเวลาด้วยไม่ให้คนไข้ต้องรอ วันนี้มีเคสคนโดนงูกัดด้วยแต่ต้องรอหมอเกือบชม. ถ้าไม่มีความรับผิดชอบก็ควรลาออกเถอะครับ สงสารคนไข้ มารอหมอเป็นชั่วโมง เคสวันนี้ 26/9/68 รพ.เจาะไอร้อง ทีมีหมอเข้าเวรสาย' },
+            { id: '68pgeqY', resId: '8VeE5l', date: '2025-09-26 13:38:16', type: 'อุบัติเหตุฉุกเฉิน', scores: [3, 3, 3, 3, 3], comment: 'ฝากผู้ดูแลด้วย ถ้าหมอไม่อยากทำงานก็ควรลาออก มาตั้งแต่ 17:00 จนถึง 21:00 แล้วยังไม่เสร็จเลย' },
             { id: 'Xx72eae', resId: 'KYVGBKV', date: '2025-12-16 22:15:31', type: 'เจ็บป่วยทั่วไป', scores: [4, 4, 3, 4, 3], comment: 'มาด้วยเหนื่อย ต้องพ่นยา 3 dose รอบ1-2 มาพ่นยาให้ รอบที่3 ให้คนไข้/ญาติ เปิดเกย์ O2 พ่นยาเอง บริการตัวเอง ให้ยากลับบ้านเรียบร้อย พร้อมบอกเวลาพ่นยาให้พ่นเอง แต่เจ้าหน้าที่กลับเข้าห้อง ปิดประตู และปิดไฟ ไม่มีการมาประเมินผู้ป่วยก่อนกลับบ้านอีกครั้ง ถึงจะพ่นยาเองได้ แต่ก็เป็นหน้าที่ของพยาบาลที่ต้องมาดูผู้ป่วยด้วย ไม่ใช่ให้พ่นยาอยู่กับญาติ ไม่มีเจ้าหน้าที่มาคอยสังเกตอาการเลย' },
             { id: 'peAKy2Z', resId: 'Y5kDjD6', date: '2026-06-05 02:27:21', type: 'อุบัติเหตุฉุกเฉิน', scores: [5, 5, 5, 5, 5], comment: '' },
             { id: 'q5BQ705', resId: 'Y5kDjD6', date: '2026-06-09 07:06:08', type: 'ฉีดยา ทำแผล', scores: [5, 5, 4, 5, 5], comment: 'ให้บริการ ดีมาก' },
@@ -872,37 +948,51 @@
 
         // Live Fetch Google Sheet data using CORS-free JSONP connection (Highly stable)
         async function fetchGoogleSheetData() {
-            updateSyncStatus('loading', 'กำลังดึงข้อมูล...');
+            // --- Validate input before doing anything ---
             let rawInput = document.getElementById('sheet-id-input').value.trim();
-            
+            if (!rawInput) {
+                showToast('กรุณากรอก Spreadsheet ID หรือ URL ก่อนกดซิงค์', 'warning');
+                return;
+            }
+
+            // Extract ID from full URL if pasted
             let sheetId = rawInput;
             if (rawInput.includes('/d/')) {
                 sheetId = rawInput.split('/d/')[1].split('/')[0];
             }
+            // Basic format check
+            if (!/^[a-zA-Z0-9_-]{20,}$/.test(sheetId)) {
+                showToast('Spreadsheet ID ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'error');
+                return;
+            }
 
-            // Remove any previous dynamic script tag to prevent memory leaks
+            updateSyncStatus('loading', 'กำลังดึงข้อมูล...');
+
+            // Remove any previous dynamic script tag to prevent memory leaks / stale callbacks
             const oldScript = document.getElementById('gviz-jsonp-script');
             if (oldScript) oldScript.remove();
+            if (jsonpTimeout) clearTimeout(jsonpTimeout);
 
             // Set up globally accessible callback function
             window.handleGoogleSheetResponse = function(response) {
                 if (jsonpTimeout) clearTimeout(jsonpTimeout);
+                const s = document.getElementById('gviz-jsonp-script');
+                if (s) s.remove();
                 
                 try {
                     if (!response || response.status === 'error') {
-                        const errMsg = response?.errors?.[0]?.detailed_message || 'เกิดข้อผิดพลาดด้านการประสานสิทธิ์ Google Sheets';
+                        const errMsg = response?.errors?.[0]?.detailed_message || 'เกิดข้อผิดพลาดด้านสิทธิ์ Google Sheets';
                         throw new Error(errMsg);
                     }
 
                     const table = response.table;
                     if (!table || !table.rows || table.rows.length === 0) {
-                        throw new Error('ไม่พบข้อมูลประเมินในสเปรดชีตนี้');
+                        throw new Error('ไม่พบข้อมูลในสเปรดชีตนี้ (อาจยังไม่มีการกรอกแบบสอบถาม)');
                     }
 
                     // Map sheet columns
                     sheetHeadersGlobal = table.cols.map((col, idx) => col.label ? col.label.trim() : `คอลัมน์ ${idx + 1}`);
                     
-                    // Format for Columns Map option modal compatibility
                     parsedRawRowsGlobal = [sheetHeadersGlobal];
                     table.rows.forEach(r => {
                         if (r && r.c) {
@@ -910,43 +1000,47 @@
                         }
                     });
 
-                    // Trigger Smart Auto Column Detector
                     autoDetectColumns(sheetHeadersGlobal, table.rows);
-                    
-                    // Build normalized database
                     buildDatabaseFromMapping(table.rows);
                     
-                    updateSyncStatus('success', 'เชื่อมต่อคลาวด์สำเร็จ');
+                    updateSyncStatus('success', `เชื่อมต่อสำเร็จ (${table.rows.length} รายการ)`);
                     document.getElementById('offline-alert').classList.add('hidden');
-                    showToast('ซิงค์ข้อมูล Google Sheet แบบไร้ CORS เรียบร้อยแล้ว!', 'success');
+                    showToast(`ซิงค์สำเร็จ! โหลด ${table.rows.length} รายการจาก Google Sheets`, 'success');
 
                 } catch (error) {
                     console.warn('JSONP Parse failed:', error);
-                    loadOfflineBackup();
-                    updateSyncStatus('offline', 'ออฟไลน์ (เชื่อมต่อไม่สำเร็จ)');
-                    document.getElementById('offline-alert').classList.remove('hidden');
-                    showToast(error.message || 'โครงสร้างข้อมูลไม่สมบูรณ์ ดึงข้อมูลจำลองเข้าแทน', 'warning');
-                    applyFilters();
+                    handleFetchFallback(error.message);
                 }
             };
 
-            // Inject the script element to run JSONP
+            // Shared fallback handler
+            function handleFetchFallback(reason) {
+                loadOfflineBackup();
+                updateSyncStatus('offline', 'ออฟไลน์ (ใช้ข้อมูลตัวอย่าง)');
+                document.getElementById('offline-alert').classList.remove('hidden');
+                showToast(reason || 'ไม่สามารถเชื่อมต่อได้ — แสดงข้อมูลตัวอย่างแทน', 'warning');
+                rebuildDynamicFilters();
+                applyFilters();
+            }
+
+            // Build JSONP script tag
             const script = document.createElement('script');
             script.id = 'gviz-jsonp-script';
             script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&headers=1`;
-            
-            // Set safety timer at 6 seconds
+
+            // Detect immediate network error (DNS failure, no internet, etc.)
+            script.onerror = () => {
+                if (jsonpTimeout) clearTimeout(jsonpTimeout);
+                script.remove();
+                handleFetchFallback('เครือข่ายขัดข้อง หรือ URL ไม่ถูกต้อง — แสดงข้อมูลตัวอย่างแทน');
+            };
+
+            // Timeout — shorter now that onerror handles instant failures
             jsonpTimeout = setTimeout(() => {
                 script.remove();
-                console.warn('Google Sheets JSONP Connection Timed Out.');
-                loadOfflineBackup();
-                updateSyncStatus('offline', 'ออฟไลน์ (หมดเวลาเชื่อมต่อ)');
-                document.getElementById('offline-alert').classList.remove('hidden');
-                showToast('ไม่สามารถเชื่อมต่อ Google Sheets ได้หมดเวลา (กรุณาเปิดสิทธิ์แชร์ทั่วไปในชีต)', 'error');
-                applyFilters();
-            }, 6000);
+                handleFetchFallback('เกินเวลาเชื่อมต่อ (10 วินาที) — กรุณาเปิดสิทธิ์แชร์ชีตเป็น "ทุกคนที่มีลิงก์"');
+            }, 10000);
 
-            // Append to run request
             document.head.appendChild(script);
         }
 
@@ -1082,14 +1176,18 @@
                     if (isNaN(scoreVal)) {
                         scoreVal = parseInt(getFormattedVal(sIdx));
                     }
-                    return isNaN(scoreVal) ? 5 : scoreVal;
+                    return isNaN(scoreVal) ? null : scoreVal;
                 });
 
-                // Guess service type fallback if empty
+                // Skip rows where all scores are null (empty/unmapped)
+                if (parsedScores.every(s => s === null)) return;
+                // Replace remaining nulls with 3 (neutral) and log warning
+                parsedScores = parsedScores.map(s => s === null ? 3 : s);
+
+                // Use "ไม่ระบุ" when service type is missing to avoid data distortion
                 let parsedType = getFormattedVal(columnMapping.type).toString().trim();
                 if (!parsedType) {
-                    const services = ['ฉีดยา ทำแผล', 'เจ็บป่วยทั่วไป', 'อุบัติเหตุฉุกเฉิน'];
-                    parsedType = services[rIdx % services.length];
+                    parsedType = 'ไม่ระบุ';
                 }
 
                 activeDatabase.push({
@@ -1102,6 +1200,7 @@
                 });
             });
 
+            rebuildDynamicFilters();
             applyFilters();
         }
 
@@ -1200,17 +1299,72 @@
         function updateSyncStatus(status, text) {
             const badge = document.getElementById('sync-status-badge');
             const statusTxt = document.getElementById('sync-status-text');
+            const kpiStatus = document.getElementById('kpi-connect-status');
             if(!badge) return;
 
             statusTxt.innerText = text;
 
             if (status === 'loading') {
                 badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-yellow-500/15 text-yellow-300 border border-yellow-500/30";
+                if (kpiStatus) kpiStatus.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1 text-slate-400"></i><span class="text-slate-400">กำลังเชื่อมต่อ...</span>`;
+                // Start countdown in status text
+                let sec = 10;
+                const countdownId = setInterval(() => {
+                    sec--;
+                    if (sec <= 0) { clearInterval(countdownId); return; }
+                    const el = document.getElementById('sync-status-text');
+                    if (el) el.innerText = `กำลังดึงข้อมูล... (${sec}s)`;
+                }, 1000);
+                badge._countdownId = countdownId;
             } else if (status === 'success') {
+                if (badge._countdownId) clearInterval(badge._countdownId);
                 badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+                if (kpiStatus) kpiStatus.innerHTML = `<i class="fa-solid fa-check-circle mr-1 text-emerald-500"></i><span class="text-emerald-600">เชื่อมโยงคลาวด์สำเร็จ</span>`;
+                // Show open sheet link dynamically using current sheet ID
+                const sheetId = document.getElementById('sheet-id-input').value.trim();
+                const linkContainer = document.getElementById('open-sheet-link-container');
+                const linkEl = document.getElementById('open-sheet-link');
+                if (linkContainer && linkEl && sheetId) {
+                    let id = sheetId;
+                    if (sheetId.includes('/d/')) id = sheetId.split('/d/')[1].split('/')[0];
+                    linkEl.href = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+                    linkContainer.style.display = '';
+                }
             } else {
+                if (badge._countdownId) clearInterval(badge._countdownId);
                 badge.className = "flex items-center space-x-2 text-xs py-1.5 px-3 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30";
+                if (kpiStatus) kpiStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i><span class="text-amber-600">ออฟไลน์ (ข้อมูลตัวอย่าง)</span>`;
             }
+        }
+
+        function rebuildDynamicFilters() {
+            // Rebuild service type filter from actual data
+            const serviceEl = document.getElementById('filter-service');
+            const currentService = serviceEl.value;
+            const types = [...new Set(activeDatabase.map(r => r.type).filter(t => t))].sort();
+            serviceEl.innerHTML = '<option value="all">บริการทั้งหมด (All Services)</option>';
+            types.forEach(t => {
+                serviceEl.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+            serviceEl.value = types.includes(currentService) ? currentService : 'all';
+
+            // Rebuild year filter from actual data
+            const yearEl = document.getElementById('filter-timeframe');
+            const currentYear = yearEl.value;
+            const years = [...new Set(activeDatabase.map(r => r.date.substring(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort();
+            const minYear = years[0] || '';
+            const maxYear = years[years.length - 1] || '';
+            yearEl.innerHTML = `<option value="all">ทุกช่วงเวลา${minYear ? ` (${minYear} - ${maxYear})` : ''}</option>`;
+            years.forEach(y => {
+                yearEl.innerHTML += `<option value="${y}">ปี ${y}</option>`;
+            });
+            yearEl.value = years.includes(currentYear) ? currentYear : 'all';
+        }
+
+        // Debounce wrapper for search
+        function debounceSearch() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => applyFilters(), 300);
         }
 
         // Apply filters & Redraw All Elements
@@ -1246,6 +1400,9 @@
 
                 return true;
             });
+
+            // Reset to first page on new filter
+            currentPage = 1;
 
             document.getElementById('filtered-count').innerText = `${filteredData.length} รายการ`;
             if (document.getElementById('count-filtered-txt')) {
@@ -1284,7 +1441,8 @@
             document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
             document.getElementById(`nav-${tabId}`).className = "flex items-center px-4 py-3 text-sm font-medium rounded-xl bg-teal-800 text-white transition-all duration-150";
 
-            document.getElementById('mobile-tab-select').value = tabId;
+            const mobileSelect = document.getElementById('mobile-tab-select');
+            if (mobileSelect) mobileSelect.value = tabId;
 
             const titles = {
                 overview: 'แดชบอร์ดสรุปผลความพึงพอใจภาพรวม',
@@ -1375,6 +1533,20 @@
             const overallAvg = totalScoresSum / total;
             const csatRate = (satisfiedCount / total) * 100;
             const complaintRate = (complaintCount / total) * 100;
+
+            // NPS: % Promoters (avg=5) - % Detractors (avg≤2)
+            let promoters = 0, detractors = 0;
+            filteredData.forEach(row => {
+                const rowAvg = row.scores.reduce((a,b)=>a+b,0) / row.scores.length;
+                if (rowAvg >= 4.5) promoters++;
+                else if (rowAvg <= 2) detractors++;
+            });
+            const nps = Math.round(((promoters - detractors) / total) * 100);
+            if (document.getElementById('kpi-nps')) {
+                const npsEl = document.getElementById('kpi-nps');
+                npsEl.innerText = (nps >= 0 ? '+' : '') + nps;
+                npsEl.className = `text-3xl font-extrabold mt-2 ${nps >= 50 ? 'text-emerald-600' : nps >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
+            }
 
             document.getElementById('kpi-avg').innerHTML = `${overallAvg.toFixed(2)} <span class="text-xs font-normal text-slate-400">/ 5.0</span>`;
             document.getElementById('kpi-csat').innerText = `${csatRate.toFixed(1)}%`;
@@ -1490,12 +1662,26 @@
 
             if (filteredData.length === 0) {
                 emptyState.classList.remove('hidden');
+                document.getElementById('pagination-controls').classList.add('hidden');
                 return;
             } else {
                 emptyState.classList.add('hidden');
+                document.getElementById('pagination-controls').classList.remove('hidden');
             }
 
-            filteredData.forEach(row => {
+            // Pagination slice
+            const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredData.length);
+            const pageData = filteredData.slice(start, end);
+
+            document.getElementById('pagination-info').innerText = `แสดง ${start + 1} - ${end} จาก ${filteredData.length} รายการ`;
+            document.getElementById('pagination-page').innerText = `หน้า ${currentPage} / ${totalPages}`;
+            document.getElementById('btn-prev').disabled = currentPage <= 1;
+            document.getElementById('btn-next').disabled = currentPage >= totalPages;
+
+            pageData.forEach(row => {
                 const rowAvg = (row.scores.reduce((a,b)=>a+b,0) / row.scores.length).toFixed(2);
                 let badge = '';
                 let textComment = row.comment;
@@ -1763,6 +1949,42 @@
 
         function hideInstructions() {
             document.getElementById('instruction-modal').classList.add('hidden');
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderFeedbackList();
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshOn = !autoRefreshOn;
+            const btn = document.getElementById('auto-refresh-btn');
+            const icon = document.getElementById('auto-refresh-icon');
+            const label = document.getElementById('auto-refresh-label');
+            if (autoRefreshOn) {
+                autoRefreshInterval = setInterval(() => {
+                    if (document.getElementById('sheet-id-input').value.trim()) {
+                        fetchGoogleSheetData();
+                    }
+                }, 5 * 60 * 1000); // every 5 minutes
+                btn.classList.add('bg-teal-100', 'border-teal-400', 'text-teal-700');
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                icon.classList.add('animate-spin');
+                if (label) label.innerText = 'Auto ON';
+                showToast('เปิด Auto Refresh ทุก 5 นาทีแล้ว', 'success');
+            } else {
+                clearInterval(autoRefreshInterval);
+                btn.classList.remove('bg-teal-100', 'border-teal-400', 'text-teal-700');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+                icon.classList.remove('animate-spin');
+                if (label) label.innerText = 'Auto Refresh';
+                showToast('ปิด Auto Refresh แล้ว', 'warning');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const panel = document.getElementById('mobile-nav-panel');
+            panel.classList.toggle('hidden');
         }
 
         // Export active database to CSV
